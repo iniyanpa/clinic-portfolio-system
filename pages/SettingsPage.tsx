@@ -1,8 +1,11 @@
 
 import React from 'react';
 import { ICONS } from '../constants';
+import { isFirebaseConfigured } from '../firebase';
 
 const SettingsPage: React.FC = () => {
+  const isConnected = isFirebaseConfigured();
+
   return (
     <div className="space-y-8 animate-in fade-in">
       <div>
@@ -12,20 +15,27 @@ const SettingsPage: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 space-y-8">
-           <h3 className="font-heading text-xl text-slate-700 uppercase tracking-widest border-b pb-4">Branding & Location</h3>
-           <div className="space-y-6">
-              <div className="space-y-1">
-                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest subheading">Hospital Name</label>
-                 <input className="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none font-bold text-primary" defaultValue="SLS HOSPITAL" readOnly />
+           <h3 className="font-heading text-xl text-slate-700 uppercase tracking-widest border-b pb-4">Cloud Health Check</h3>
+           <div className="p-8 rounded-[2rem] border border-slate-50 flex flex-col items-center text-center">
+              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shadow-xl ${isConnected ? 'bg-green-500 text-white' : 'bg-amber-500 text-white'}`}>
+                {ICONS.Settings}
               </div>
-              <div className="space-y-1">
-                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest subheading">Location Matrix</label>
-                 <input className="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none" defaultValue="Tirupati, Andhra Pradesh, India" readOnly />
-              </div>
-              <div className="space-y-1">
-                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest subheading">Regional Contact</label>
-                 <input className="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none" defaultValue="+91 877 1234567" readOnly />
-              </div>
+              <h4 className={`font-heading text-xl uppercase mb-2 ${isConnected ? 'text-green-600' : 'text-amber-600'}`}>
+                {isConnected ? 'Sync Status: Active' : 'Sync Status: Offline'}
+              </h4>
+              <p className="text-xs text-slate-400 font-medium mb-6">
+                {isConnected 
+                  ? 'The hospital management system is successfully communicating with the Firebase Firestore database.' 
+                  : 'System is running in Local Mode. Real-time data storage requires updating your Firebase credentials.'}
+              </p>
+              {!isConnected && (
+                <div className="w-full p-4 bg-slate-50 rounded-2xl text-[10px] font-mono text-slate-500 text-left">
+                  Config Check: <br/>
+                  API Key: Missing <br/>
+                  App ID: Missing <br/>
+                  Firestore: Uninitialized
+                </div>
+              )}
            </div>
         </div>
 

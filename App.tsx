@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { onSnapshot, query, doc, setDoc, addDoc, updateDoc, collection } from "firebase/firestore";
-import { db, clinicalCollections } from './firebase';
+import { onSnapshot, doc, setDoc, updateDoc } from "firebase/firestore";
+import { db, clinicalCollections, isFirebaseConfigured } from './firebase';
 import { UserRole, User, Patient, Appointment, MedicalRecord, Bill, ApptStatus, CommunicationLog, Prescription } from './types';
 import { ICONS } from './constants';
 import Sidebar from './components/Sidebar';
@@ -19,6 +19,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [dbStatus, setDbStatus] = useState<'connected' | 'placeholder'>('placeholder');
 
   // Firestore Synced States
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -29,35 +30,122 @@ const App: React.FC = () => {
   const [bills, setBills] = useState<Bill[]>([]);
   const [commLogs, setCommLogs] = useState<CommunicationLog[]>([]);
 
-  // Real-time Listeners
   useEffect(() => {
+    if (isFirebaseConfigured()) {
+      setDbStatus('connected');
+    } else {
+      setDbStatus('placeholder');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (dbStatus === 'placeholder') return;
+
     const unsubPatients = onSnapshot(clinicalCollections.patients, (snapshot) => {
-      setPatients(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Patient)));
+      setPatients(snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id } as Patient)));
     });
     const unsubStaff = onSnapshot(clinicalCollections.staff, (snapshot) => {
-      setStaff(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User)));
+      setStaff(snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id } as User)));
     });
     const unsubAppts = onSnapshot(clinicalCollections.appointments, (snapshot) => {
-      setAppointments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment)));
+      setAppointments(snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id } as Appointment)));
     });
     const unsubPrescriptions = onSnapshot(clinicalCollections.prescriptions, (snapshot) => {
-      setPrescriptions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prescription)));
+      setPrescriptions(snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id } as Prescription)));
     });
     const unsubBills = onSnapshot(clinicalCollections.bills, (snapshot) => {
-      setBills(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Bill)));
+      setBills(snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id } as Bill)));
     });
     const unsubLogs = onSnapshot(clinicalCollections.logs, (snapshot) => {
-      setCommLogs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommunicationLog)));
+      setCommLogs(snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id } as CommunicationLog)));
+    });
+    const unsubRecords = onSnapshot(clinicalCollections.records, (snapshot) => {
+      setRecords(snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id } as MedicalRecord)));
     });
 
     return () => {
       unsubPatients(); unsubStaff(); unsubAppts();
-      unsubPrescriptions(); unsubBills(); unsubLogs();
+      unsubPrescriptions(); unsubBills(); unsubLogs(); unsubRecords();
     };
-  }, []);
+  }, [dbStatus]);
 
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val);
+  const handleProvisionSystem = async () => {
+    setIsLoggingIn(true);
+    const initialAdmin: User = {
+      id: 'A001',
+      name: 'System Admin',
+      email: 'admin@slshospital.com',
+      role: UserRole.ADMIN,
+      avatar: 'https://picsum.photos/seed/admin/200/200',
+      phone: '+91 0000000000'
+    };
+    try {
+      await setDoc(doc(db, "staff", "A001"), initialAdmin);
+      alert("System Provisioned! You can now log in as Administrator.");
+    } catch (e) {
+      alert("Failed to provision system. Check your Firestore Security Rules.");
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleAddPatient = async (p: Patient) => {
+    await setDoc(doc(db, "patients", p.id), p);
+    triggerCommunication(p.id, 'Email', `Welcome to SLS Hospital! Your Patient ID is ${p.id}. Registry complete.`);
+  };
+
+  const handleUpdatePatient = async (updated: Patient) => {
+    await updateDoc(doc(db, "patients", updated.id), { ...updated });
+  };
+
+  const handleAddStaff = async (u: User) => {
+    await setDoc(doc(db, "staff", u.id), u);
+  };
+
+  const handleUpdateStaff = async (updated: User) => {
+    await updateDoc(doc(db, "staff", updated.id), { ...updated });
+  };
+
+  const handleAddAppointment = async (a: Appointment) => {
+    await setDoc(doc(db, "appointments", a.id), a);
+    triggerCommunication(a.patientId, 'WhatsApp', `SLS Hospital: Visit confirmed for ${a.date} at ${a.time}.`);
+  };
+
+  const handleUpdateApptStatus = async (id: string, status: ApptStatus, extraData?: Partial<Appointment>) => {
+    const apptRef = doc(db, "appointments", id);
+    try {
+      await updateDoc(apptRef, { 
+        status, 
+        ...extraData 
+      });
+    } catch (err) {
+      console.error("Failed to update appointment status:", err);
+      const appt = appointments.find(a => a.id === id);
+      if (appt && appt.docId) {
+        await updateDoc(doc(db, "appointments", appt.docId), { status, ...extraData });
+      }
+    }
+  };
+
+  const handleFinalizeConsultation = async (record: MedicalRecord, prescription: Prescription) => {
+    try {
+      await setDoc(doc(db, "records", record.id), record);
+      await setDoc(doc(db, "prescriptions", prescription.id), prescription);
+      await handleUpdateApptStatus(record.appointmentId, 'Completed');
+      triggerCommunication(record.patientId, 'WhatsApp', `Consultation complete. Order Rx-${prescription.id.slice(-4)} is ready.`);
+    } catch (err) {
+      console.error("Workflow Finalization Error:", err);
+      alert("Failed to finalize consultation. Check connection.");
+    }
+  };
+
+  const handleAddBill = async (bill: Bill) => {
+    await setDoc(doc(db, "bills", bill.id), bill);
+    triggerCommunication(bill.patientId, 'WhatsApp', `Payment of ₹${bill.total} received by SLS Hospital. Reference: ${bill.id}`);
+  };
+
+  const handleDispense = async (pxId: string) => {
+    await updateDoc(doc(db, "prescriptions", pxId), { status: 'Dispensed' });
   };
 
   const handleLogout = () => {
@@ -66,74 +154,16 @@ const App: React.FC = () => {
     setIsSidebarOpen(false);
   };
 
-  const handleAddPatient = async (p: Patient) => {
-    await setDoc(doc(db, "patients", p.id), p);
-    triggerCommunication(p.id, 'Email', `Welcome to SLS Hospital! Your Patient ID is ${p.id}.`);
-  };
-
-  const handleUpdatePatient = async (updated: Patient) => {
-    await updateDoc(doc(db, "patients", updated.id), { ...updated });
-  };
-
-  const handleAddStaff = async (u: User) => {
-    await addDoc(clinicalCollections.staff, u);
-  };
-
-  const handleUpdateStaff = async (updated: User) => {
-    // Note: This assumes staff documents have their 'id' as the firestore document ID
-    // In a real app, you'd find the doc by staff ID first.
-    const staffDoc = staff.find(s => s.id === updated.id);
-    if (staffDoc) {
-       // Logic to update firestore
-    }
-  };
-
-  const handleAddAppointment = async (a: Appointment) => {
-    await addDoc(clinicalCollections.appointments, a);
-    triggerCommunication(a.patientId, 'WhatsApp', `SLS Hospital: Visit confirmed for ${a.date} at ${a.time}.`);
-  };
-
-  // Fixed signature to match AppointmentsPageProps and added basic doc update logic
-  const handleUpdateApptStatus = async (id: string, status: ApptStatus, reason?: string) => {
-    const appt = appointments.find(a => a.id === id);
-    if (appt) {
-      // Use docId if available, otherwise fallback to id
-      const docRefId = appt.docId || appt.id;
-      const apptRef = doc(db, "appointments", docRefId);
-      await updateDoc(apptRef, { 
-        status, 
-        ...(reason && { cancellationReason: reason }) 
-      });
-    }
-  };
-
-  const handleFinalizeConsultation = async (record: MedicalRecord, prescription: Prescription) => {
-    await addDoc(clinicalCollections.records, record);
-    await addDoc(clinicalCollections.prescriptions, prescription);
-    
-    // Update appointment status to completed in Firestore
-    // Note: Requires finding the specific Firestore Doc ID for that appointment
-    triggerCommunication(record.patientId, 'WhatsApp', `Consultation complete. Order Rx-${prescription.id.slice(-4)} is ready.`);
-  };
-
-  const handleAddBill = async (bill: Bill) => {
-    await addDoc(clinicalCollections.bills, bill);
-    triggerCommunication(bill.patientId, 'WhatsApp', `Payment of ${formatCurrency(bill.total)} received by SLS Hospital.`);
-  };
-
-  const handleDispense = async (pxId: string) => {
-    // Update firestore prescription status
-  };
-
   const triggerCommunication = async (patientId: string, type: 'WhatsApp' | 'Email', content: string) => {
+    const logId = `LOG-${Date.now()}`;
     const log: CommunicationLog = {
-      id: `LOG-${Date.now()}`,
+      id: logId,
       patientId,
       type,
       content,
       sentAt: new Date().toISOString()
     };
-    await addDoc(clinicalCollections.logs, log);
+    await setDoc(doc(db, "communication_logs", logId), log);
   };
 
   if (!currentUser) {
@@ -141,54 +171,74 @@ const App: React.FC = () => {
       <div className="min-h-screen bg-primary flex items-center justify-center p-4 font-body overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
         <div className="bg-white p-8 md:p-12 rounded-[2rem] md:rounded-[3.5rem] shadow-2xl w-full max-w-md border-t-[12px] border-secondary relative z-10">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
              <div className="w-20 h-20 bg-primary/5 rounded-3xl mx-auto mb-6 flex items-center justify-center text-primary shadow-inner">
                 {ICONS.Staff}
              </div>
             <h1 className="text-4xl md:text-5xl font-heading text-primary tracking-tighter leading-none mb-2 uppercase">SLS <span className="text-secondary">HOSPITAL</span></h1>
             <p className="subheading text-gray-400 tracking-[0.3em] text-[9px] uppercase font-bold">Clinical Enterprise OS • Tirupati AP</p>
           </div>
+
+          <div className="mb-8 flex justify-center">
+            {dbStatus === 'connected' ? (
+              <div className="flex items-center gap-2 px-4 py-1.5 bg-green-50 rounded-full border border-green-100">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-[9px] font-bold text-green-600 uppercase tracking-widest">GCP Cloud Live</span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-1">
+                <div className="flex items-center gap-2 px-4 py-1.5 bg-amber-50 rounded-full border border-amber-100">
+                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                  <span className="text-[9px] font-bold text-amber-600 uppercase tracking-widest">Database Check Required</span>
+                </div>
+              </div>
+            )}
+          </div>
           
           <div className="space-y-4">
-             <p className="text-center text-[9px] font-bold text-slate-300 uppercase tracking-widest mb-4">Cloud Identity Hub</p>
+             <p className="text-center text-[9px] font-bold text-slate-300 uppercase tracking-widest mb-4">Select Terminal</p>
              <div className="grid grid-cols-1 gap-3">
                {[
-                 { role: UserRole.ADMIN, label: 'Administrator', desc: 'System & Governance', icon: ICONS.Settings },
-                 { role: UserRole.DOCTOR, label: 'Doctor Terminal', desc: 'Clinical Operations', icon: ICONS.Records },
-                 { role: UserRole.RECEPTIONIST, label: 'Reception Desk', desc: 'Registry & Billing', icon: ICONS.Patients },
-                 { role: UserRole.PHARMACIST, label: 'Pharmacy Unit', desc: 'Medication Control', icon: ICONS.Staff }
+                 { role: UserRole.ADMIN, label: 'Administrator', desc: 'System & Governance' },
+                 { role: UserRole.DOCTOR, label: 'Doctor Terminal', desc: 'Clinical Ops' },
+                 { role: UserRole.RECEPTIONIST, label: 'Reception Desk', desc: 'Registry & Billing' },
+                 { role: UserRole.PHARMACIST, label: 'Pharmacy Unit', desc: 'Medication' }
                ].map((btn) => (
                 <button 
                   key={btn.role}
+                  disabled={dbStatus === 'placeholder' || isLoggingIn}
                   onClick={() => { 
                     setIsLoggingIn(true); 
                     const foundUser = staff.find(u => u.role === btn.role);
                     setTimeout(() => { 
                       if (foundUser) setCurrentUser(foundUser);
-                      else alert("No staff profile found for this role in database.");
+                      else alert(`Account not found. Provisioning required.`);
                       setIsLoggingIn(false); 
-                    }, 800); 
+                    }, 600); 
                   }}
                   className="w-full bg-slate-50 border border-slate-100 hover:border-secondary hover:bg-white p-4 rounded-2xl flex items-center justify-between group transition-all"
                 >
-                  <div className="flex items-center gap-4 text-left">
-                    <div className="w-10 h-10 bg-slate-200 text-slate-600 rounded-xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">{btn.icon}</div>
-                    <div>
-                      <p className="font-heading text-xs uppercase tracking-widest text-slate-800">{btn.label}</p>
-                      <p className="text-[9px] font-bold text-slate-400">{btn.desc}</p>
-                    </div>
+                  <div className="text-left">
+                    <p className="font-heading text-xs uppercase tracking-widest text-slate-800">{btn.label}</p>
+                    <p className="text-[9px] font-bold text-slate-400">{btn.desc}</p>
                   </div>
                   <span className="text-slate-300 group-hover:text-secondary group-hover:translate-x-1 transition-all">→</span>
                 </button>
                ))}
              </div>
           </div>
-          <div className="mt-12 text-center">
-             {isLoggingIn ? (
-               <div className="text-[10px] font-bold text-secondary animate-pulse uppercase tracking-[0.4em]">Connecting to Firestore...</div>
-             ) : (
-               <p className="text-[9px] text-slate-300 font-medium italic">Data hosted on Google Cloud Platform</p>
-             )}
+
+          <div className="mt-8 pt-6 border-t border-slate-50 text-center">
+            {staff.length === 0 && dbStatus === 'connected' ? (
+              <button 
+                onClick={handleProvisionSystem}
+                className="text-[9px] font-bold text-secondary uppercase tracking-widest bg-secondary/10 px-6 py-2 rounded-lg hover:bg-secondary hover:text-white transition-all"
+              >
+                Provision System (First Run)
+              </button>
+            ) : (
+              <p className="text-[9px] text-slate-300 font-medium uppercase tracking-widest">Authorized Access Only</p>
+            )}
           </div>
         </div>
       </div>
@@ -212,16 +262,14 @@ const App: React.FC = () => {
               {ICONS.Menu}
             </button>
             <div className="flex flex-col">
-              <span className="subheading text-[8px] text-secondary font-bold tracking-[0.4em] uppercase">SLS Cloud Matrix</span>
+              <span className="subheading text-[8px] text-secondary font-bold tracking-[0.4em] uppercase">SLS Hospital Tirupati</span>
               <h2 className="text-lg md:text-2xl font-heading text-primary uppercase tracking-wide leading-none">{activeTab.replace('-', ' ')}</h2>
             </div>
           </div>
           <div className="flex items-center gap-4">
-             <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold text-slate-900 leading-tight">{currentUser.name}</p>
-                <p className="text-[8px] font-bold text-primary uppercase tracking-widest opacity-60">
-                   {currentUser.role} {currentUser.specialization ? `• ${currentUser.specialization}` : ''}
-                </p>
+             <div className="flex items-center gap-2 mr-4 px-3 py-1 bg-green-50 text-green-600 rounded-lg text-[8px] font-bold uppercase tracking-widest border border-green-100/50">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                GCP Live
              </div>
              <img src={currentUser.avatar} className="w-10 h-10 rounded-xl object-cover border-2 border-secondary shadow-sm" alt="Avatar" />
           </div>
@@ -230,7 +278,6 @@ const App: React.FC = () => {
         <div className="p-4 md:p-10 w-full max-w-7xl mx-auto flex-1 pb-20">
           {activeTab === 'dashboard' && <Dashboard patients={patients} appointments={appointments} bills={bills} logs={commLogs} setActiveTab={setActiveTab} />}
           {activeTab === 'patients' && <Patients patients={patients} addPatient={handleAddPatient} updatePatient={handleUpdatePatient} />}
-          {/* Fix: Added missing staff prop and ensured handler matches signature */}
           {activeTab === 'appointments' && <AppointmentsPage patients={patients} staff={staff} appointments={appointments} addAppointment={handleAddAppointment} updateAppointmentStatus={handleUpdateApptStatus} />}
           {activeTab === 'records' && <ConsultationRoom patients={patients} appointments={appointments} finalizeConsultation={handleFinalizeConsultation} />}
           {activeTab === 'pharmacy' && <PharmacyPage prescriptions={prescriptions} patients={patients} onDispense={handleDispense} />}

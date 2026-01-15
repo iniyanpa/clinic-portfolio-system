@@ -46,6 +46,14 @@ export interface Appointment {
   status: ApptStatus;
   reason: string;
   cancellationReason?: string;
+  // Pre-consultation data entered at check-in
+  vitals?: {
+    bp: string;
+    temp: string;
+    weight: string;
+    pulse: string;
+  };
+  initialSymptoms?: string;
 }
 
 export interface MedicalRecord {
