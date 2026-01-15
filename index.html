@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HealFlow | Clinic Management</title>
+  <title>HealFlow | Enterprise Clinic OS</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +16,7 @@
           colors: {
             primary: '#29378c',
             secondary: '#29baed',
-            accent: '#f3f4f6',
+            accent: '#f1f5f9',
           },
           fontFamily: {
             heading: ['Oswald', 'sans-serif'],
@@ -28,24 +28,30 @@
     }
   </script>
   <style>
-    body { font-family: 'IBM Plex Sans', sans-serif; }
-    h1, h2, h3 { font-family: 'Oswald', sans-serif; }
+    body { font-family: 'IBM Plex Sans', sans-serif; background-color: #f8fafc; }
+    h1, h2, h3, .font-heading { font-family: 'Oswald', sans-serif; }
     .subheading { font-family: 'Cinzel', serif; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
   </style>
 <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
     "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react-dom": "https://esm.sh/react-dom@^19.2.3",
     "recharts": "https://esm.sh/recharts@^3.6.0",
     "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "jspdf": "https://esm.sh/jspdf@^4.0.0"
+    "jspdf": "https://esm.sh/jspdf@^4.0.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
 </head>
-<body class="bg-gray-50 text-gray-900">
+<body>
   <div id="root"></div>
+  <script type="module" src="index.tsx"></script>
 </body>
 </html>

@@ -1,176 +1,94 @@
 
-import React from 'react';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  AreaChart, Area, PieChart, Pie, Cell 
-} from 'recharts';
+import React, { useMemo } from 'react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { ICONS } from '../constants';
-import { Patient, Appointment, Bill } from '../types';
+import { Patient, Appointment, Bill, CommunicationLog } from '../types';
 
-// Defined interface for Dashboard props to resolve 'IntrinsicAttributes' error
 interface DashboardProps {
   patients: Patient[];
   appointments: Appointment[];
   bills: Bill[];
+  logs: CommunicationLog[];
+  setActiveTab: (tab: string) => void;
 }
 
-const statsData = [
-  { name: 'Mon', appointments: 12, revenue: 2400 },
-  { name: 'Tue', appointments: 19, revenue: 3800 },
-  { name: 'Wed', appointments: 15, revenue: 3000 },
-  { name: 'Thu', appointments: 22, revenue: 4400 },
-  { name: 'Fri', appointments: 30, revenue: 6000 },
-  { name: 'Sat', appointments: 10, revenue: 2000 },
-];
+const COLORS = ['#29378c', '#29baed', '#10b981', '#f59e0b', '#6366f1'];
 
-const distributionData = [
-  { name: 'General', value: 400 },
-  { name: 'Pediatrics', value: 300 },
-  { name: 'Dermatology', value: 200 },
-  { name: 'Cardiology', value: 278 },
-];
+const Dashboard: React.FC<DashboardProps> = ({ patients, appointments, bills, logs, setActiveTab }) => {
+  const analytics = useMemo(() => {
+    const totalRev = bills.reduce((acc, b) => acc + b.total, 0);
+    const pendingAppts = appointments.filter(a => a.status === 'Scheduled' || a.status === 'Checked-in').length;
+    
+    // Last 7 days revenue for chart
+    const revData = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const dailyTotal = bills.filter(b => b.date === dateStr).reduce((sum, b) => sum + b.total, 0);
+      return { name: d.toLocaleDateString('en-IN', { weekday: 'short' }), rev: dailyTotal };
+    }).reverse();
 
-const COLORS_PIE = ['#29378c', '#29baed', '#10b981', '#f59e0b'];
+    return { totalRev, pendingAppts, revData };
+  }, [bills, appointments]);
 
-// Updated component to use DashboardProps
-const Dashboard: React.FC<DashboardProps> = ({ patients, appointments, bills }) => {
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-end mb-6">
-        <div>
-          <h2 className="text-4xl font-heading text-primary uppercase">Clinic Overview</h2>
-          <p className="subheading text-secondary font-bold">Real-time Analytics</p>
-        </div>
-        <div className="flex gap-2">
-          <button className="bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200 flex items-center gap-2 hover:bg-gray-50 transition-colors">
-            {ICONS.Download} Export PDF
-          </button>
-          <button className="bg-primary text-white px-4 py-2 rounded-lg shadow-md flex items-center gap-2 hover:opacity-90 transition-opacity">
-            {ICONS.Plus} New Appointment
-          </button>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="space-y-10 animate-in fade-in duration-700">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {[
-          { label: 'Total Patients', value: patients.length.toLocaleString(), trend: '+12%', color: 'border-l-4 border-primary' },
-          { label: 'Today Appointments', value: appointments.length.toString(), trend: '+5', color: 'border-l-4 border-secondary' },
-          { label: 'Monthly Revenue', value: '$' + bills.reduce((acc, b) => acc + b.total, 0).toLocaleString(), trend: '+18%', color: 'border-l-4 border-green-500' },
-          { label: 'Avg Rating', value: '4.8/5', trend: 'Excellent', color: 'border-l-4 border-yellow-500' },
-        ].map((stat, idx) => (
-          <div key={idx} className={`bg-white p-6 rounded-xl shadow-sm ${stat.color} hover:shadow-md transition-shadow`}>
-            <p className="text-gray-500 text-sm font-medium uppercase tracking-wider">{stat.label}</p>
-            <div className="flex justify-between items-end mt-2">
-              <h3 className="text-2xl font-bold text-gray-800">{stat.value}</h3>
-              <span className="text-green-500 text-sm font-bold">{stat.trend}</span>
+          { label: 'Total Revenue', value: '₹' + analytics.totalRev.toLocaleString('en-IN'), icon: ICONS.Billing, color: 'text-green-500' },
+          { label: 'Today\'s Queue', value: analytics.pendingAppts, icon: ICONS.Appointments, color: 'text-primary' },
+          { label: 'Active Patients', value: patients.length, icon: ICONS.Patients, color: 'text-secondary' },
+          { label: 'Comms Sent', value: logs.length, icon: ICONS.SMS, color: 'text-amber-500' },
+        ].map((stat, i) => (
+          <div key={i} className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 hover:shadow-xl transition-all group">
+            <div className="flex justify-between items-start mb-4">
+               <div className={`p-4 bg-slate-50 rounded-2xl ${stat.color} transition-colors group-hover:bg-primary group-hover:text-white`}>
+                 {stat.icon}
+               </div>
+               <span className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em]">Real-time</span>
             </div>
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest subheading">{stat.label}</p>
+            <h3 className="text-3xl font-bold text-slate-800 mt-2">{stat.value}</h3>
           </div>
         ))}
       </div>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold mb-6 text-gray-700 font-heading">Patient Traffic & Revenue</h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={statsData}>
-                <defs>
-                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#29baed" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#29baed" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b'}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b'}} />
-                <Tooltip />
-                <Area type="monotone" dataKey="revenue" stroke="#29baed" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
-                <Area type="monotone" dataKey="appointments" stroke="#29378c" strokeWidth={3} fill="transparent" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+           <h3 className="text-2xl font-heading text-slate-700 uppercase tracking-[0.2em] mb-10">Revenue Stream (Last 7 Days)</h3>
+           <div className="h-[350px]">
+             <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={analytics.revData}>
+                  <defs>
+                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#29baed" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#29baed" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11}} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11}} />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="rev" stroke="#29baed" strokeWidth={4} fillOpacity={1} fill="url(#colorRev)" />
+                </AreaChart>
+             </ResponsiveContainer>
+           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold mb-6 text-gray-700 font-heading">Department Distribution</h3>
-          <div className="h-80 flex flex-col items-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={distributionData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {distributionData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS_PIE[index % COLORS_PIE.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="flex gap-4 mt-2">
-              {distributionData.map((d, i) => (
-                <div key={i} className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded-full" style={{backgroundColor: COLORS_PIE[i]}}></div>
-                  <span className="text-xs text-gray-500">{d.name}</span>
+        <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden">
+           <h3 className="text-2xl font-heading text-slate-700 uppercase tracking-[0.2em] mb-8">Notification Engine</h3>
+           <div className="space-y-6 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+              {logs.map(log => (
+                <div key={log.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100/50">
+                   <div className="flex justify-between items-center mb-1">
+                      <span className="text-[9px] font-bold text-secondary uppercase tracking-widest">{log.type}</span>
+                      <span className="text-[8px] text-slate-400 font-mono">{new Date(log.sentAt).toLocaleTimeString()}</span>
+                   </div>
+                   <p className="text-xs text-slate-600 leading-relaxed italic">"{log.content}"</p>
                 </div>
               ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activity */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <h3 className="text-lg font-bold mb-4 text-gray-700 font-heading">Today's Appointments</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="pb-3 font-semibold text-sm text-gray-500">Patient Name</th>
-                <th className="pb-3 font-semibold text-sm text-gray-500">Time</th>
-                <th className="pb-3 font-semibold text-sm text-gray-500">Reason</th>
-                <th className="pb-3 font-semibold text-sm text-gray-500">Status</th>
-                <th className="pb-3 text-right"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* Used appointments and patients props to render dynamic data instead of hardcoded items */}
-              {appointments.slice(0, 5).map((appt) => {
-                const patient = patients.find(p => p.id === appt.patientId);
-                return (
-                  <tr key={appt.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
-                    <td className="py-4 font-medium text-gray-800">{patient ? `${patient.firstName} ${patient.lastName}` : 'Unknown Patient'}</td>
-                    <td className="py-4 text-gray-600">{appt.time}</td>
-                    <td className="py-4 text-gray-600">{appt.reason}</td>
-                    <td className="py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        appt.status === 'Completed' ? 'bg-green-100 text-green-700' :
-                        appt.status === 'Waiting' ? 'bg-blue-100 text-blue-700' :
-                        'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {appt.status}
-                      </span>
-                    </td>
-                    <td className="py-4 text-right">
-                      <button className="text-primary hover:text-secondary font-bold text-sm">View Record</button>
-                    </td>
-                  </tr>
-                );
-              })}
-              {appointments.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-gray-400 italic">No appointments for today</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+              {logs.length === 0 && <p className="text-center py-10 text-slate-300 italic">No activity logs yet.</p>}
+           </div>
         </div>
       </div>
     </div>
