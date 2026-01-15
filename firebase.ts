@@ -2,15 +2,21 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, orderBy, setDoc } from "firebase/firestore";
 
-// NOTE TO USER: Replace the values below with the ones from your Firebase Console
-// (Project Settings > General > Your Apps > Web App)
+/**
+ * FIREBASE SETUP STEPS:
+ * 1. Go to https://console.firebase.google.com/
+ * 2. Select your project: "sls-hospital"
+ * 3. Click the "Project Settings" (gear icon) -> "General" tab.
+ * 4. Scroll down to "Your apps", select your Web App.
+ * 5. Copy the 'firebaseConfig' object and paste its values below.
+ */
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
+  apiKey: "REPLACE_WITH_YOUR_API_KEY",
   authDomain: "sls-hospital.firebaseapp.com",
   projectId: "sls-hospital",
   storageBucket: "sls-hospital.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  messagingSenderId: "REPLACE_WITH_YOUR_SENDER_ID",
+  appId: "REPLACE_WITH_YOUR_APP_ID"
 };
 
 const app = initializeApp(firebaseConfig);

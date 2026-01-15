@@ -37,6 +37,7 @@ export interface Patient {
 
 export interface Appointment {
   id: string;
+  docId?: string; // Firestore internal ID
   patientId: string;
   doctorId: string;
   date: string;
@@ -44,6 +45,7 @@ export interface Appointment {
   department: string;
   status: ApptStatus;
   reason: string;
+  cancellationReason?: string;
 }
 
 export interface MedicalRecord {
@@ -61,6 +63,7 @@ export interface MedicalRecord {
     pulse: string;
   };
   notes: string;
+  followUpDate?: string;
   aiInsights?: string;
 }
 
