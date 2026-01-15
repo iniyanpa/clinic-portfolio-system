@@ -1,0 +1,7 @@
+{
+  "name": "HealFlow - Advanced Outpatient Clinic Management",
+  "description": "A comprehensive clinic management system featuring role-based access, patient records, prescription PDF generation, and integrated billing analytics.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
