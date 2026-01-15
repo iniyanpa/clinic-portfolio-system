@@ -12,7 +12,8 @@ interface ConsultationRoomProps {
 const COMMON_MEDICINES = [
   "Paracetamol 500mg", "Amoxicillin 500mg", "Cetirizine 10mg", "Azithromycin 500mg",
   "Pantoprazole 40mg", "Metformin 500mg", "Amlodipine 5mg", "Ibuprofen 400mg",
-  "Cough Syrup (Ascoril)", "Vitamin D3 60K", "B-Complex", "Zincovit"
+  "Cough Syrup (Ascoril)", "Vitamin D3 60K", "B-Complex", "Zincovit", "Telmisartan 40mg",
+  "Atorvastatin 10mg", "Clopidogrel 75mg", "Limcee 500mg"
 ];
 
 const FOOD_INSTRUCTIONS = ["Before Food", "After Food", "With Food", "Empty Stomach"];
@@ -22,12 +23,12 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
   const [vitals, setVitals] = useState({ bp: '', temp: '', pulse: '', weight: '' });
   const [notes, setNotes] = useState({ symptoms: '', diagnosis: '', general: '' });
   
-  // Structured medicine state
+  // Structured medicine state per your request
   const [medicines, setMedicines] = useState([{ 
     name: '', 
     duration: '5', 
     instructions: 'After Food',
-    freq: { m: true, a: false, e: false, n: true } 
+    freq: { morning: true, afternoon: false, evening: false, night: true } 
   }]);
 
   const currentAppt = appointments.find(a => a.id === activeId);
@@ -54,8 +55,8 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
       appointmentId: activeId,
       date: new Date().toISOString().split('T')[0],
       medicines: medicines.map(m => ({
-        name: m.name || "N/A",
-        dosage: `${m.freq.m ? '1' : '0'}-${m.freq.a ? '1' : '0'}-${m.freq.e ? '1' : '0'}-${m.freq.n ? '1' : '0'}`,
+        name: m.name || "General Medicine",
+        dosage: `${m.freq.morning ? '1' : '0'}-${m.freq.afternoon ? '1' : '0'}-${m.freq.evening ? '1' : '0'}-${m.freq.night ? '1' : '0'}`,
         duration: `${m.duration} Days`,
         instructions: m.instructions
       }))
@@ -63,9 +64,13 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
 
     finalizeConsultation(record, prescription);
     setActiveId(null);
+    resetForm();
+  };
+
+  const resetForm = () => {
     setVitals({ bp: '', temp: '', pulse: '', weight: '' });
     setNotes({ symptoms: '', diagnosis: '', general: '' });
-    setMedicines([{ name: '', duration: '5', instructions: 'After Food', freq: { m: true, a: false, e: false, n: true } }]);
+    setMedicines([{ name: '', duration: '5', instructions: 'After Food', freq: { morning: true, afternoon: false, evening: false, night: true } }]);
   };
 
   const updateMed = (idx: number, updates: any) => {
@@ -74,7 +79,7 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
     setMedicines(copy);
   };
 
-  const toggleFreq = (idx: number, time: 'm' | 'a' | 'e' | 'n') => {
+  const toggleFreq = (idx: number, time: keyof typeof medicines[0]['freq']) => {
     const copy = [...medicines];
     copy[idx].freq[time] = !copy[idx].freq[time];
     setMedicines(copy);
@@ -96,7 +101,7 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
               {ICONS.Records}
             </div>
             <h3 className="text-3xl font-heading text-slate-800 uppercase tracking-widest mb-4">Patient Waiting List</h3>
-            <p className="text-slate-400 text-sm mb-12 text-center max-w-sm">Select a checked-in patient to start their clinical assessment.</p>
+            <p className="text-slate-400 text-sm mb-12 text-center max-w-sm">Select a patient to begin clinical entry.</p>
             
             <div className="w-full max-w-2xl divide-y divide-slate-100">
               {appointments.filter(a => a.status === 'Scheduled' || a.status === 'Checked-in').map(appt => {
@@ -116,7 +121,7 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
                       onClick={() => setActiveId(appt.id)}
                       className="px-8 py-3 bg-primary text-white font-heading text-xs tracking-widest uppercase rounded-xl hover:bg-secondary transition-all opacity-0 group-hover:opacity-100 shadow-xl"
                     >
-                      Start Session
+                      Enter Room
                     </button>
                   </div>
                 );
@@ -146,68 +151,68 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
             <p className="subheading text-secondary font-bold text-[10px] tracking-[0.4em]">{currentPat?.id} • {currentPat?.gender} • BLOOD {currentPat?.bloodGroup}</p>
           </div>
         </div>
-        <div className="text-right relative z-10">
-          <p className="text-[10px] subheading uppercase tracking-widest text-white/50 mb-1">Session Active</p>
-          <p className="text-4xl font-mono font-bold tracking-tighter">{currentAppt?.time}</p>
-        </div>
+        <button onClick={() => setActiveId(null)} className="relative z-10 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all text-xl">×</button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 space-y-8">
+        <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 space-y-8 h-fit sticky top-28">
           <h4 className="font-heading text-xl text-slate-700 uppercase tracking-widest border-b border-slate-50 pb-4">Vitals Engine</h4>
-          <div className="space-y-6">
-            <div>
-              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2 subheading">Blood Pressure</label>
-              <input type="text" className="w-full p-4 bg-slate-50 border-none rounded-xl outline-none focus:ring-4 focus:ring-secondary/10 font-mono text-sm" placeholder="120/80" value={vitals.bp} onChange={e => setVitals({...vitals, bp: e.target.value})} />
-            </div>
-            <div>
-              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2 subheading">Temp (°C)</label>
-              <input type="text" className="w-full p-4 bg-slate-50 border-none rounded-xl outline-none focus:ring-4 focus:ring-secondary/10 font-mono text-sm" placeholder="37.0" value={vitals.temp} onChange={e => setVitals({...vitals, temp: e.target.value})} />
-            </div>
-            <div>
-              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2 subheading">Pulse (BPM)</label>
-              <input type="text" className="w-full p-4 bg-slate-50 border-none rounded-xl outline-none focus:ring-4 focus:ring-secondary/10 font-mono text-sm" placeholder="72" value={vitals.pulse} onChange={e => setVitals({...vitals, pulse: e.target.value})} />
-            </div>
-            <div>
-              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2 subheading">Weight (KG)</label>
-              <input type="text" className="w-full p-4 bg-slate-50 border-none rounded-xl outline-none focus:ring-4 focus:ring-secondary/10 font-mono text-sm" placeholder="70" value={vitals.weight} onChange={e => setVitals({...vitals, weight: e.target.value})} />
-            </div>
+          <div className="space-y-5">
+            {[
+              { label: 'Blood Pressure', key: 'bp', placeholder: '120/80', unit: 'mmHg' },
+              { label: 'Temperature', key: 'temp', placeholder: '37.0', unit: '°C' },
+              { label: 'Pulse Rate', key: 'pulse', placeholder: '72', unit: 'BPM' },
+              { label: 'Weight', key: 'weight', placeholder: '70', unit: 'KG' }
+            ].map(v => (
+              <div key={v.key} className="space-y-1">
+                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1 subheading">{v.label}</label>
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    className="w-full p-4 bg-slate-50 border-none rounded-xl outline-none focus:ring-4 focus:ring-secondary/10 font-mono text-sm" 
+                    placeholder={v.placeholder} 
+                    value={(vitals as any)[v.key]} 
+                    onChange={e => setVitals({...vitals, [v.key]: e.target.value})} 
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] text-slate-300 font-bold uppercase">{v.unit}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
         <div className="lg:col-span-3 space-y-8">
-          <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 space-y-10">
+          <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 space-y-12">
              <section className="space-y-8">
-                <div className="flex justify-between items-center border-b border-slate-50 pb-6">
-                   <h4 className="font-heading text-2xl text-slate-700 uppercase tracking-widest">Clinical Assessment</h4>
-                </div>
-                
+                <h4 className="font-heading text-2xl text-slate-700 uppercase tracking-widest">Clinical Assessment</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                    <div className="space-y-3">
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest subheading">Chief Symptoms</label>
-                      <textarea rows={4} className="w-full p-5 bg-slate-50 border-none rounded-[2rem] outline-none focus:ring-4 focus:ring-secondary/10 text-sm" placeholder="Describe clinical symptoms..." value={notes.symptoms} onChange={e => setNotes({...notes, symptoms: e.target.value})} />
+                      <textarea rows={4} className="w-full p-6 bg-slate-50 border-none rounded-[2rem] outline-none focus:ring-4 focus:ring-secondary/10 text-sm leading-relaxed" placeholder="Detailed symptoms..." value={notes.symptoms} onChange={e => setNotes({...notes, symptoms: e.target.value})} />
                    </div>
                    <div className="space-y-3">
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest subheading">Clinical Diagnosis</label>
-                      <textarea rows={4} className="w-full p-5 bg-slate-50 border-none rounded-[2rem] outline-none focus:ring-4 focus:ring-secondary/10 text-sm font-bold text-primary" placeholder="State condition..." value={notes.diagnosis} onChange={e => setNotes({...notes, diagnosis: e.target.value})} />
+                      <textarea rows={4} className="w-full p-6 bg-slate-50 border-none rounded-[2rem] outline-none focus:ring-4 focus:ring-secondary/10 text-sm font-bold text-primary" placeholder="Diagnosis result..." value={notes.diagnosis} onChange={e => setNotes({...notes, diagnosis: e.target.value})} />
                    </div>
                 </div>
              </section>
 
              <section className="pt-10 border-t border-slate-50 space-y-8">
-                <h4 className="font-heading text-2xl text-slate-700 uppercase tracking-widest">Digital Prescription (Rx)</h4>
+                <h4 className="font-heading text-2xl text-slate-700 uppercase tracking-widest flex items-center gap-4">
+                  Digital Prescription (Rx)
+                </h4>
                 <div className="space-y-6">
                    {medicines.map((m, idx) => (
-                     <div key={idx} className="p-6 bg-slate-50 rounded-[2rem] relative border border-slate-100">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                     <div key={idx} className="p-8 bg-slate-50 rounded-[2.5rem] relative border border-slate-100 animate-in fade-in zoom-in duration-300">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                            <div className="space-y-1">
                               <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest subheading">Drug Name</label>
                               <select 
-                                className="w-full p-3 bg-white border-none rounded-xl outline-none focus:ring-2 focus:ring-secondary/10 text-xs font-bold"
+                                className="w-full p-4 bg-white border-none rounded-xl outline-none focus:ring-2 focus:ring-secondary/10 text-xs font-bold shadow-sm appearance-none"
                                 value={m.name}
                                 onChange={e => updateMed(idx, { name: e.target.value })}
                               >
-                                <option value="">Select Medicine...</option>
+                                <option value="">Select Medication...</option>
                                 {COMMON_MEDICINES.map(med => <option key={med} value={med}>{med}</option>)}
                               </select>
                            </div>
@@ -215,15 +220,15 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
                               <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest subheading">Duration (Days)</label>
                               <input 
                                 type="number" 
-                                className="w-full p-3 bg-white border-none rounded-xl outline-none focus:ring-2 focus:ring-secondary/10 text-xs" 
+                                className="w-full p-4 bg-white border-none rounded-xl outline-none focus:ring-2 focus:ring-secondary/10 text-xs shadow-sm font-mono" 
                                 value={m.duration} 
                                 onChange={e => updateMed(idx, { duration: e.target.value })} 
                               />
                            </div>
                            <div className="space-y-1">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest subheading">Instructions</label>
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest subheading">Food Advice</label>
                               <select 
-                                className="w-full p-3 bg-white border-none rounded-xl outline-none focus:ring-2 focus:ring-secondary/10 text-xs"
+                                className="w-full p-4 bg-white border-none rounded-xl outline-none focus:ring-2 focus:ring-secondary/10 text-xs shadow-sm appearance-none"
                                 value={m.instructions}
                                 onChange={e => updateMed(idx, { instructions: e.target.value })}
                               >
@@ -232,31 +237,43 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
                            </div>
                         </div>
 
-                        <div className="flex items-center gap-4">
-                           <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest subheading min-w-[100px]">Frequency (M-A-E-N):</label>
-                           <div className="flex gap-2">
-                              {(['m', 'a', 'e', 'n'] as const).map(time => (
+                        <div className="bg-white p-6 rounded-2xl shadow-sm">
+                           <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest subheading block mb-4">Administration Schedule:</label>
+                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                              {[
+                                { id: 'morning', label: 'Morning' },
+                                { id: 'afternoon', label: 'Afternoon' },
+                                { id: 'evening', label: 'Evening' },
+                                { id: 'night', label: 'Night' }
+                              ].map(time => (
                                 <button
-                                  key={time}
-                                  onClick={() => toggleFreq(idx, time)}
-                                  className={`w-10 h-10 rounded-xl flex items-center justify-center text-[10px] font-bold uppercase transition-all ${
-                                    m.freq[time] ? 'bg-secondary text-white shadow-md' : 'bg-white text-slate-300'
+                                  key={time.id}
+                                  onClick={() => toggleFreq(idx, time.id as any)}
+                                  className={`py-3 rounded-xl flex items-center justify-center gap-2 text-[10px] font-bold uppercase transition-all border-2 ${
+                                    m.freq[time.id as keyof typeof m.freq] 
+                                      ? 'bg-primary border-primary text-white shadow-lg' 
+                                      : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-secondary/20'
                                   }`}
                                 >
-                                  {time}
+                                  {m.freq[time.id as keyof typeof m.freq] ? '✓' : ''} {time.label}
                                 </button>
                               ))}
                            </div>
                         </div>
 
                         {medicines.length > 1 && (
-                          <button onClick={() => setMedicines(medicines.filter((_, i) => i !== idx))} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors">
-                            <span className="text-xl">×</span>
+                          <button onClick={() => setMedicines(medicines.filter((_, i) => i !== idx))} className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center bg-white text-slate-300 hover:text-red-500 rounded-full shadow-sm transition-colors">
+                            ×
                           </button>
                         )}
                      </div>
                    ))}
-                   <button onClick={() => setMedicines([...medicines, { name: '', duration: '5', instructions: 'After Food', freq: { m: true, a: false, e: false, n: true } }])} className="text-[10px] font-bold text-secondary uppercase tracking-[0.2em] border-2 border-dashed border-secondary/20 p-5 rounded-[2rem] w-full hover:bg-secondary/5 transition-all">Add Medicine Entry</button>
+                   <button 
+                     onClick={() => setMedicines([...medicines, { name: '', duration: '5', instructions: 'After Food', freq: { morning: true, afternoon: false, evening: false, night: true } }])} 
+                     className="text-[10px] font-bold text-secondary uppercase tracking-[0.2em] border-2 border-dashed border-secondary/20 p-6 rounded-[2.5rem] w-full hover:bg-secondary/5 transition-all flex items-center justify-center gap-3"
+                   >
+                     {ICONS.Plus} Add Additional Medication
+                   </button>
                 </div>
              </section>
 
@@ -264,9 +281,9 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
                 <button onClick={() => setActiveId(null)} className="px-10 py-4 text-slate-400 font-bold hover:bg-slate-50 rounded-2xl transition-all uppercase tracking-widest text-xs">Defer Session</button>
                 <button 
                   onClick={handleFinalize}
-                  className="px-14 py-4 bg-primary text-white font-heading tracking-[0.2em] uppercase rounded-2xl hover:bg-secondary transition-all shadow-2xl active:scale-95 text-lg"
+                  className="px-14 py-5 bg-primary text-white font-heading tracking-[0.2em] uppercase rounded-2xl hover:bg-secondary transition-all shadow-2xl active:scale-95 text-xl"
                 >
-                  Finalize & Push to Billing
+                  Finalize & Send to Billing
                 </button>
              </div>
           </div>
