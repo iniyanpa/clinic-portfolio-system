@@ -20,7 +20,8 @@ const Sidebar: React.FC<SidebarProps> = ({ user, activeTab, setActiveTab, onLogo
     { id: 'records', label: 'Consultations', icon: ICONS.Records, roles: [UserRole.DOCTOR, UserRole.ADMIN] },
     { id: 'pharmacy', label: 'Pharmacy', icon: ICONS.Staff, roles: [UserRole.PHARMACIST, UserRole.ADMIN] },
     { id: 'billing', label: 'Financials', icon: ICONS.Billing, roles: [UserRole.ADMIN, UserRole.RECEPTIONIST] },
-    { id: 'settings', label: 'Systems', icon: ICONS.Settings, roles: [UserRole.ADMIN] },
+    { id: 'staff', label: 'Employees', icon: ICONS.Staff, roles: [UserRole.ADMIN] },
+    { id: 'settings', label: 'Facility Systems', icon: ICONS.Settings, roles: [UserRole.ADMIN] },
   ];
 
   const filteredMenu = menuItems.filter(item => item.roles.includes(user.role as UserRole));
@@ -38,16 +39,17 @@ const Sidebar: React.FC<SidebarProps> = ({ user, activeTab, setActiveTab, onLogo
       <div className={`fixed left-0 top-0 h-screen bg-primary text-white flex flex-col z-50 shadow-2xl transition-transform duration-300 w-64 ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="absolute inset-0 bg-gradient-to-b from-primary via-primary to-black opacity-90"></div>
         
-        <div className="p-8 relative z-10 flex justify-between items-center">
+        <div className="p-8 relative z-10 flex flex-col gap-1">
           <button 
             onClick={() => { setActiveTab('dashboard'); setIsOpen(false); }}
-            className="text-left group transition-all duration-300 block"
+            className="text-left group transition-all duration-300 block mb-1"
           >
             <h1 className="text-2xl font-heading tracking-widest flex items-center gap-1 leading-none italic">
-              HEAL<span className="text-secondary">FLOW</span>
+              SLS<span className="text-secondary">HOSPITAL</span>
             </h1>
           </button>
-          <button onClick={() => setIsOpen(false)} className="lg:hidden text-white/50 hover:text-white transition-colors">
+          <span className="text-[8px] font-bold text-white/30 tracking-[0.4em] uppercase">Tirupati SV Area Hub</span>
+          <button onClick={() => setIsOpen(false)} className="lg:hidden absolute top-8 right-4 text-white/50 hover:text-white transition-colors">
             {ICONS.Close}
           </button>
         </div>
@@ -72,12 +74,16 @@ const Sidebar: React.FC<SidebarProps> = ({ user, activeTab, setActiveTab, onLogo
         </nav>
 
         <div className="p-6 border-t border-white/5 relative z-10">
+          <div className="bg-white/5 rounded-2xl p-4 mb-4 hidden lg:block">
+             <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest mb-1">Identity Node</p>
+             <p className="text-[10px] font-bold text-white/80 uppercase tracking-widest truncate">{user.name}</p>
+          </div>
           <button 
              onClick={onLogout}
              className="flex items-center gap-4 px-5 py-4 w-full hover:bg-red-500/10 rounded-2xl text-white/30 hover:text-red-400 transition-all duration-300 font-heading text-xs uppercase tracking-[0.2em]"
           >
             {ICONS.Logout}
-            <span>Terminate</span>
+            <span>Terminate Session</span>
           </button>
         </div>
       </div>

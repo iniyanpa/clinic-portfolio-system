@@ -16,6 +16,7 @@ export interface User {
   role: UserRole;
   avatar: string;
   specialization?: string;
+  phone?: string;
 }
 
 export interface Patient {
@@ -60,6 +61,7 @@ export interface MedicalRecord {
     pulse: string;
   };
   notes: string;
+  aiInsights?: string;
 }
 
 export interface Prescription {
@@ -67,6 +69,7 @@ export interface Prescription {
   patientId: string;
   appointmentId: string;
   date: string;
+  status: 'Pending' | 'Dispensed' | 'Cancelled';
   medicines: Array<{
     name: string;
     dosage: string;
@@ -75,12 +78,18 @@ export interface Prescription {
   }>;
 }
 
+export interface BillItem {
+  id: string;
+  description: string;
+  amount: number;
+}
+
 export interface Bill {
   id: string;
   patientId: string;
   appointmentId: string;
   date: string;
-  items: Array<{ description: string; amount: number }>;
+  items: BillItem[];
   total: number;
   paymentMethod?: PaymentMethod;
   status: 'Paid' | 'Unpaid';
