@@ -28,6 +28,7 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
   const [aiResponse, setAiResponse] = useState<string | null>(null);
   const [pastRecords, setPastRecords] = useState<MedicalRecord[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [selectedHistoryRecord, setSelectedHistoryRecord] = useState<MedicalRecord | null>(null);
   
   const [medicines, setMedicines] = useState([{ 
     name: '', 
@@ -39,7 +40,6 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
   const currentAppt = appointments.find(a => a.id === activeId);
   const currentPat = patients.find(p => p.id === currentAppt?.patientId);
 
-  // Fetch past medical history when a patient is summoned
   useEffect(() => {
     if (currentPat?.id) {
       setIsLoadingHistory(true);
@@ -50,7 +50,6 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
       
       const unsub = onSnapshot(q, (snapshot) => {
         const fetched = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as MedicalRecord));
-        // Sort descending by date
         const sorted = fetched.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setPastRecords(sorted);
         setIsLoadingHistory(false);
@@ -130,6 +129,7 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
     setAiResponse(null);
     setMedicines([{ name: '', duration: '5', instructions: 'After Food', freq: { morning: true, afternoon: false, evening: false, night: true } }]);
     setPastRecords([]);
+    setSelectedHistoryRecord(null);
   };
 
   const updateMed = (idx: number, updates: any) => {
@@ -198,8 +198,8 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
          <button onClick={() => setActiveId(null)} className="text-white/50 hover:text-white text-3xl transition-colors relative z-10">×</button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* LEFT COLUMN: Current Vitals & Triage */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative">
+        {/* LEFT COLUMN: Current Vitals & Triage & History Side Pane */}
         <div className="lg:col-span-3 space-y-8">
           <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
             <h4 className="font-heading text-xl text-slate-700 uppercase tracking-widest border-b pb-4 mb-6">Current Triage</h4>
@@ -222,8 +222,8 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
             </div>
           </div>
 
-          {/* PAST MEDICAL HISTORY SUB-PANEL */}
-          <div className="bg-primary/5 p-8 rounded-[3rem] border border-primary/10 shadow-sm max-h-[500px] overflow-hidden flex flex-col">
+          {/* PAST MEDICAL HISTORY SIDE PANE */}
+          <div className="bg-primary/5 p-8 rounded-[3rem] border border-primary/10 shadow-sm max-h-[600px] overflow-hidden flex flex-col">
             <h4 className="font-heading text-xl text-primary uppercase tracking-widest border-b border-primary/10 pb-4 mb-6 flex justify-between items-center">
               Past Visits
               <span className="bg-primary text-white text-[9px] px-2 py-0.5 rounded-full">{pastRecords.length}</span>
@@ -235,15 +235,20 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
                  <p className="text-center py-10 text-slate-400 italic text-[11px]">No previous records found.</p>
                ) : (
                  pastRecords.map(rec => (
-                   <div key={rec.id} className="p-4 bg-white rounded-2xl border border-primary/10 shadow-sm group">
+                   <button 
+                    key={rec.id} 
+                    onClick={() => setSelectedHistoryRecord(rec)}
+                    className="w-full text-left p-4 bg-white rounded-2xl border border-primary/10 shadow-sm group hover:border-secondary hover:shadow-md transition-all active:scale-95"
+                   >
                       <div className="flex justify-between items-center mb-2">
                         <p className="text-[8px] font-bold text-primary uppercase">{rec.date.split('T')[0]}</p>
+                        <span className="text-[8px] text-secondary opacity-0 group-hover:opacity-100 transition-opacity">View Full Note →</span>
                       </div>
                       <p className="text-[10px] font-bold text-slate-800 line-clamp-1 group-hover:line-clamp-none transition-all">{rec.diagnosis}</p>
                       <div className="mt-2 flex gap-2">
                         <span className="text-[8px] font-mono text-slate-400">{rec.vitals.weight}kg • {rec.vitals.bp}</span>
                       </div>
-                   </div>
+                   </button>
                  ))
                )}
             </div>
@@ -323,6 +328,76 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
           </div>
         </div>
       </div>
+
+      {/* HISTORICAL RECORD FULL MODAL */}
+      {selectedHistoryRecord && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10 animate-in fade-in zoom-in duration-300">
+           <div className="absolute inset-0 bg-primary/40 backdrop-blur-md" onClick={() => setSelectedHistoryRecord(null)}></div>
+           <div className="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl overflow-hidden relative z-10 flex flex-col max-h-[90vh]">
+              <div className="bg-primary p-10 text-white flex justify-between items-center shadow-xl">
+                 <div>
+                    <h3 className="text-3xl font-heading uppercase tracking-widest leading-none">Archive Record</h3>
+                    <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] mt-2">Historical Physician Notes • {selectedHistoryRecord.date.split('T')[0]}</p>
+                 </div>
+                 <button onClick={() => setSelectedHistoryRecord(null)} className="text-4xl text-white/50 hover:text-white transition-colors leading-none">×</button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-10 space-y-10 custom-scrollbar">
+                 {/* GRID: Vitals & Core Meta */}
+                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {[
+                      { label: 'Weight', val: selectedHistoryRecord.vitals.weight, unit: 'kg' },
+                      { label: 'BP', val: selectedHistoryRecord.vitals.bp, unit: 'mmHg' },
+                      { label: 'Temp', val: selectedHistoryRecord.vitals.temp, unit: '°F' },
+                      { label: 'Pulse', val: selectedHistoryRecord.vitals.pulse, unit: 'bpm' }
+                    ].map(v => (
+                      <div key={v.label} className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                         <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest subheading mb-1">{v.label}</p>
+                         <p className="text-xl font-bold text-primary font-mono">{v.val} <span className="text-[9px] text-slate-300 font-sans">{v.unit}</span></p>
+                      </div>
+                    ))}
+                 </div>
+
+                 {/* Diagnosis & Narrative */}
+                 <div className="space-y-8">
+                    <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100">
+                       <h4 className="text-[10px] font-bold text-primary uppercase tracking-widest subheading mb-4">Final Clinical Diagnosis</h4>
+                       <p className="text-xl font-bold text-slate-800 tracking-wide uppercase font-heading">{selectedHistoryRecord.diagnosis}</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                       <div className="space-y-4">
+                          <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest subheading">Symptom History</h4>
+                          <p className="text-sm text-slate-600 leading-relaxed italic">"{selectedHistoryRecord.symptoms}"</p>
+                       </div>
+                       <div className="space-y-4">
+                          <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest subheading">Physician Remarks</h4>
+                          <p className="text-sm text-slate-600 leading-relaxed">{selectedHistoryRecord.notes || 'No extended remarks provided.'}</p>
+                       </div>
+                    </div>
+
+                    {selectedHistoryRecord.aiInsights && (
+                       <div className="p-8 bg-secondary/5 rounded-[2.5rem] border border-secondary/10">
+                          <h4 className="text-[10px] font-bold text-secondary uppercase tracking-widest subheading mb-4">Past AI Insights</h4>
+                          <div className="text-[11px] text-slate-500 italic whitespace-pre-wrap leading-relaxed">{selectedHistoryRecord.aiInsights}</div>
+                       </div>
+                    )}
+
+                    {selectedHistoryRecord.followUpDate && (
+                       <div className="p-6 bg-amber-50 rounded-2xl border border-amber-100 flex justify-between items-center">
+                          <p className="text-[10px] font-bold text-amber-700 uppercase tracking-widest">Follow-up was scheduled for</p>
+                          <p className="text-sm font-bold text-amber-900">{selectedHistoryRecord.followUpDate}</p>
+                       </div>
+                    )}
+                 </div>
+              </div>
+              
+              <div className="p-10 border-t border-slate-50 flex justify-end">
+                 <button onClick={() => setSelectedHistoryRecord(null)} className="px-12 py-4 bg-slate-100 text-slate-400 font-heading uppercase text-xs tracking-widest rounded-2xl hover:bg-primary hover:text-white transition-all">Close Archive</button>
+              </div>
+           </div>
+        </div>
+      )}
     </div>
   );
 };

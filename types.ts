@@ -30,6 +30,7 @@ export interface Patient {
   bloodGroup: string;
   address: string;
   guardianName: string;
+  fatherSpouseName: string;
   motherName: string;
   history: string[];
   registeredDate: string;

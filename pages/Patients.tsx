@@ -11,6 +11,8 @@ interface PatientsProps {
   updatePatient: (p: Patient) => Promise<void>;
 }
 
+const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
+
 const Patients: React.FC<PatientsProps> = ({ patients, addPatient, updatePatient }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewingPatientId, setViewingPatientId] = useState<string | null>(null);
@@ -22,9 +24,17 @@ const Patients: React.FC<PatientsProps> = ({ patients, addPatient, updatePatient
   const [isSaving, setIsSaving] = useState(false);
   
   const [formData, setFormData] = useState({
-    firstName: '', lastName: '', dob: '', gender: 'Male' as any,
-    phone: '', email: '', bloodGroup: 'O+', address: '',
-    guardianName: '', motherName: ''
+    firstName: '', 
+    lastName: '', 
+    dob: '', 
+    gender: 'Male' as any,
+    phone: '', 
+    email: '', 
+    bloodGroup: '', 
+    address: '',
+    guardianName: '', 
+    fatherSpouseName: '',
+    motherName: ''
   });
 
   useEffect(() => {
@@ -55,7 +65,6 @@ const Patients: React.FC<PatientsProps> = ({ patients, addPatient, updatePatient
     const p = patients.find(pat => pat.id === rec.patientId);
     if (!p) return;
 
-    // Fetch associated prescription if exists for this session
     let px: Prescription | null = null;
     try {
       const pxQuery = query(clinicalCollections.prescriptions, where("appointmentId", "==", rec.appointmentId));
@@ -103,6 +112,7 @@ const Patients: React.FC<PatientsProps> = ({ patients, addPatient, updatePatient
         bloodGroup: editingPatient.bloodGroup,
         address: editingPatient.address,
         guardianName: editingPatient.guardianName || '',
+        fatherSpouseName: editingPatient.fatherSpouseName || '',
         motherName: editingPatient.motherName || ''
       });
       setIsModalOpen(true);
@@ -111,6 +121,13 @@ const Patients: React.FC<PatientsProps> = ({ patients, addPatient, updatePatient
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Mandatory field check (handled by HTML5 required, but adding logic for safety)
+    if (!formData.firstName || !formData.lastName || !formData.dob || !formData.bloodGroup || !formData.fatherSpouseName || !formData.motherName || !formData.phone) {
+      alert("Please fill all mandatory fields.");
+      return;
+    }
+
     setIsSaving(true);
     try {
       if (editingPatient) {
@@ -141,8 +158,8 @@ const Patients: React.FC<PatientsProps> = ({ patients, addPatient, updatePatient
     setEditingPatient(null);
     setFormData({ 
       firstName: '', lastName: '', dob: '', gender: 'Male', 
-      phone: '', email: '', bloodGroup: 'O+', address: '',
-      guardianName: '', motherName: ''
+      phone: '', email: '', bloodGroup: '', address: '',
+      guardianName: '', fatherSpouseName: '', motherName: ''
     });
   };
 
@@ -284,26 +301,51 @@ const Patients: React.FC<PatientsProps> = ({ patients, addPatient, updatePatient
                <h3 className="text-2xl font-heading uppercase tracking-widest">{editingPatient ? 'Update Case' : 'New Registry Entry'}</h3>
                <button onClick={closeModal} className="text-xl">×</button>
             </div>
-            <form onSubmit={handleRegister} className="p-10 grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            <form onSubmit={handleRegister} className="p-10 grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
               <div className="space-y-1">
-                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">First Name</label>
+                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">First Name *</label>
                  <input required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
               </div>
               <div className="space-y-1">
-                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Surname</label>
+                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Last Name *</label>
                  <input required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
               </div>
               <div className="space-y-1">
-                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">DOB</label>
+                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">DOB *</label>
                  <input required type="date" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm" value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})} />
               </div>
               <div className="space-y-1">
-                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Phone</label>
+                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Blood Group *</label>
+                 <select required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm" value={formData.bloodGroup} onChange={e => setFormData({...formData, bloodGroup: e.target.value})}>
+                    <option value="">Select Group</option>
+                    {BLOOD_GROUPS.map(bg => <option key={bg} value={bg}>{bg}</option>)}
+                 </select>
+              </div>
+              <div className="space-y-1">
+                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Father / Spouse Name *</label>
+                 <input required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm" value={formData.fatherSpouseName} onChange={e => setFormData({...formData, fatherSpouseName: e.target.value, guardianName: e.target.value})} />
+              </div>
+              <div className="space-y-1">
+                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Mother Name *</label>
+                 <input required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm" value={formData.motherName} onChange={e => setFormData({...formData, motherName: e.target.value})} />
+              </div>
+              <div className="space-y-1">
+                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Phone Number *</label>
                  <input required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+              </div>
+              <div className="space-y-1">
+                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Email (Optional)</label>
+                 <input type="email" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+              </div>
+              <div className="md:col-span-2 space-y-1">
+                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Address</label>
+                 <textarea className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm" rows={2} value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
               </div>
               <div className="md:col-span-2 flex gap-4 mt-4">
                 <button type="button" onClick={closeModal} className="flex-1 py-4 text-slate-400 font-bold uppercase text-[10px]">Abandon</button>
-                <button type="submit" className="flex-1 py-4 bg-primary text-white font-heading uppercase rounded-2xl hover:bg-secondary text-xs shadow-lg">Commit Changes</button>
+                <button type="submit" disabled={isSaving} className="flex-1 py-4 bg-primary text-white font-heading uppercase rounded-2xl hover:bg-secondary text-xs shadow-lg disabled:opacity-50">
+                  {isSaving ? 'Saving...' : (editingPatient ? 'Update Changes' : 'Commit Registry')}
+                </button>
               </div>
             </form>
           </div>

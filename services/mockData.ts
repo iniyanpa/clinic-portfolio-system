@@ -49,6 +49,8 @@ export const MOCK_PATIENTS: Patient[] = [
     bloodGroup: 'O+',
     address: 'Flat 402, Tirumala Heights, Tirupati',
     guardianName: 'Michael Chen',
+    // Added missing fatherSpouseName property to match Patient interface requirements
+    fatherSpouseName: 'Michael Chen',
     motherName: 'Linda Chen',
     history: ['Hypertension'],
     registeredDate: '2024-01-15'
@@ -64,6 +66,8 @@ export const MOCK_PATIENTS: Patient[] = [
     bloodGroup: 'A-',
     address: 'Bunglow 12, SV University Area, Tirupati',
     guardianName: 'George Johnson',
+    // Added missing fatherSpouseName property to match Patient interface requirements
+    fatherSpouseName: 'George Johnson',
     motherName: 'Mary Johnson',
     history: ['Asthma'],
     registeredDate: '2024-03-10'
