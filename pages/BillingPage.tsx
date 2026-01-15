@@ -19,7 +19,6 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
   const [searchHistory, setSearchHistory] = useState('');
   const [filterMethod, setFilterMethod] = useState<PaymentMethod | ''>('');
   
-  // State for the bill being actively edited
   const [editingBillApptId, setEditingBillApptId] = useState<string | null>(null);
   const [editingItems, setEditingItems] = useState<BillItem[]>([
     { id: '1', description: 'OPD Consultation Fee', amount: 500 },
@@ -52,17 +51,52 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
     };
   }, [bills, pendingInvoices]);
 
+  const shareCombinedToWhatsApp = (bill: Bill) => {
+    const p = patients.find(pat => pat.id === bill.patientId);
+    if (!p) return;
+
+    const record = records.find(r => r.appointmentId === bill.appointmentId);
+    const px = prescriptions.find(pr => pr.appointmentId === bill.appointmentId);
+
+    let message = `*SLS HOSPITAL - DIGITAL RECORD*%0A%0A`;
+    message += `*Hello ${p.firstName} ${p.lastName}*,%0A`;
+    message += `Thank you for choosing SLS Hospital Tirupati.%0A%0A`;
+    
+    message += `*1. PAYMENT RECEIPT*%0A`;
+    message += `Ref: ${bill.id}%0A`;
+    message += `Amount Paid: ₹${bill.total}%0A`;
+    message += `Method: ${bill.paymentMethod}%0A%0A`;
+
+    if (record) {
+      message += `*2. CLINICAL SUMMARY*%0A`;
+      message += `Diagnosis: ${record.diagnosis}%0A`;
+      message += `Vitals: BP ${record.vitals.bp}, Wt ${record.vitals.weight}kg%0A%0A`;
+    }
+
+    if (px && px.medicines.length > 0) {
+      message += `*3. PRESCRIPTION (Rx)*%0A`;
+      px.medicines.forEach(m => {
+        message += `• ${m.name} - ${m.dosage} (${m.instructions}) for ${m.duration}%0A`;
+      });
+      message += `%0A`;
+    }
+
+    message += `_Please download the full PDF from your email/portal._%0AGet well soon!`;
+
+    const phone = p.phone.replace(/[^0-9]/g, '');
+    window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${message}`, '_blank');
+  };
+
   const generateClinicalPDF = (patient: Patient, appt: Appointment, record?: MedicalRecord, prescription?: Prescription, finalizedItems?: BillItem[]) => {
     const doc = new jsPDF();
-    const primaryColor = [41, 55, 140]; // #29378c
-    const secondaryColor = [41, 186, 237]; // #29baed
+    const primaryColor = [41, 55, 140];
+    const secondaryColor = [41, 186, 237];
 
-    // Professional Header
     doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
     doc.rect(0, 0, 210, 50, 'F');
     
     doc.setTextColor(255, 255, 255);
-    doc.setFont('oswald', 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(28);
     doc.text('SLS HOSPITAL', 20, 25);
     
@@ -75,16 +109,6 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
     doc.setLineWidth(0.5);
     doc.line(20, 42, 190, 42);
 
-    // QR Verification Placeholder
-    doc.setFillColor(255, 255, 255);
-    doc.rect(160, 10, 30, 30, 'F');
-    doc.setDrawColor(0,0,0);
-    doc.rect(160, 10, 30, 30, 'S');
-    doc.setTextColor(0,0,0);
-    doc.setFontSize(6);
-    doc.text('VERIFY Rx', 175, 43, { align: 'center' });
-
-    // Patient Info Section
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
@@ -107,7 +131,6 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
 
     let y = 110;
 
-    // Clinical Findings
     if (record) {
       doc.setFont('helvetica', 'bold');
       doc.text('VITALS & ASSESSMENT:', 20, y);
@@ -123,7 +146,6 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
       y += (diagLines.length * 5) + 12;
     }
 
-    // Prescription (Rx) Table - Enhanced Alignment
     if (prescription && prescription.medicines.length > 0) {
       doc.setFillColor(245, 247, 250);
       doc.rect(20, y, 170, 8, 'F');
@@ -136,21 +158,16 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
         doc.text(med.name, 25, y);
-        
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
         doc.text(`${med.duration}`, 25, y + 5);
-        
-        // Alignment: Name at left, usage on right
         doc.text(`${med.dosage} (${med.instructions})`, 120, y);
-        
         doc.setDrawColor(240, 240, 240);
         doc.line(20, y + 8, 190, y + 8);
         y += 15;
       });
     }
 
-    // Bill Summary
     if (finalizedItems) {
         y = Math.max(y, 230);
         doc.setFont('helvetica', 'bold');
@@ -169,25 +186,10 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
         doc.text(`TOTAL AMOUNT PAID: INR ${total.toFixed(2)}`, 20, y + 6);
     }
 
-    // Footer
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
     doc.text('This is a digitally generated clinical document from SLS Hospital HMS.', 105, 285, { align: 'center' });
-    doc.text('QR-Verified • Signatures Digitally Managed.', 105, 290, { align: 'center' });
-
-    doc.save(`SLS_RxInvoice_${patient.firstName}_${Date.now().toString().slice(-4)}.pdf`);
-  };
-
-  const addItem = () => {
-    setEditingItems([...editingItems, { id: Date.now().toString(), description: 'Additional Service', amount: 0 }]);
-  };
-
-  const updateItem = (id: string, updates: Partial<BillItem>) => {
-    setEditingItems(editingItems.map(item => item.id === id ? { ...item, ...updates } : item));
-  };
-
-  const removeItem = (id: string) => {
-    setEditingItems(editingItems.filter(item => item.id !== id));
+    doc.save(`SLS_DigitalFile_${patient.firstName}_${Date.now().toString().slice(-4)}.pdf`);
   };
 
   const processPayment = (appt: Appointment) => {
@@ -210,13 +212,33 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
     addBill(newBill);
     const record = records.find(r => r.appointmentId === appt.id);
     const px = prescriptions.find(pr => pr.appointmentId === appt.id);
+    
+    // Auto-export on completion
     generateClinicalPDF(p, appt, record, px, editingItems);
     
+    // Auto-share text summary on completion
+    shareCombinedToWhatsApp(newBill);
+
     setEditingBillApptId(null);
     setEditingItems([
       { id: '1', description: 'OPD Consultation Fee', amount: 500 },
       { id: '2', description: 'Clinic Facility Charges', amount: 200 }
     ]);
+  };
+
+  const resendFile = (bill: Bill) => {
+    const p = patients.find(pat => pat.id === bill.patientId);
+    const appt = appointments.find(a => a.id === bill.appointmentId);
+    if (!p || !appt) return;
+
+    const record = records.find(r => r.appointmentId === bill.appointmentId);
+    const px = prescriptions.find(pr => pr.appointmentId === bill.appointmentId);
+
+    // 1. Re-export PDF
+    generateClinicalPDF(p, appt, record, px, bill.items);
+    
+    // 2. Resend WhatsApp
+    shareCombinedToWhatsApp(bill);
   };
 
   return (
@@ -281,18 +303,18 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
                                 <input 
                                   className="flex-1 bg-white p-2 rounded-lg text-xs outline-none focus:ring-1 ring-secondary"
                                   value={item.description}
-                                  onChange={e => updateItem(item.id, { description: e.target.value })}
+                                  onChange={e => setEditingItems(editingItems.map(i => i.id === item.id ? { ...i, description: e.target.value } : i))}
                                 />
                                 <input 
                                   className="w-20 bg-white p-2 rounded-lg text-xs outline-none focus:ring-1 ring-secondary font-mono"
                                   type="number"
                                   value={item.amount}
-                                  onChange={e => updateItem(item.id, { amount: parseFloat(e.target.value) || 0 })}
+                                  onChange={e => setEditingItems(editingItems.map(i => i.id === item.id ? { ...i, amount: parseFloat(e.target.value) || 0 } : i))}
                                 />
-                                <button onClick={() => removeItem(item.id)} className="text-red-300 hover:text-red-500 text-lg leading-none">×</button>
+                                <button onClick={() => setEditingItems(editingItems.filter(i => i.id !== item.id))} className="text-red-300 hover:text-red-500 text-lg leading-none">×</button>
                               </div>
                             ))}
-                            <button onClick={addItem} className="text-[9px] font-bold text-secondary uppercase hover:underline">+ Add Charge Item</button>
+                            <button onClick={() => setEditingItems([...editingItems, { id: Date.now().toString(), description: 'Add-on Service', amount: 0 }])} className="text-[9px] font-bold text-secondary uppercase hover:underline">+ Add Charge Item</button>
                          </div>
                        ) : (
                          <div className="space-y-2">
@@ -328,7 +350,9 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
                       ))}
                     </div>
                   </div>
-                  <button onClick={() => processPayment(appt)} className="w-full py-5 bg-primary text-white font-heading text-xl uppercase tracking-widest rounded-3xl hover:bg-secondary transition-all shadow-xl active:scale-95">Complete Payment & Export Rx</button>
+                  <button onClick={() => processPayment(appt)} className="w-full py-5 bg-primary text-white font-heading text-xl uppercase tracking-widest rounded-3xl hover:bg-secondary transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3">
+                    {ICONS.Billing} Complete Payment & Share Rx
+                  </button>
                </div>
              )
            })}
@@ -340,7 +364,7 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-[2rem] border border-slate-100 flex flex-col md:flex-row gap-4 items-center">
+          <div className="bg-white p-6 rounded-[2rem] border border-slate-100 flex flex-col md:flex-row gap-4 items-center shadow-sm">
              <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300">
                   {ICONS.Search}
@@ -348,46 +372,49 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
                 <input
                   type="text"
                   className="block w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-xl outline-none text-sm"
-                  placeholder="Search by Patient Name..."
+                  placeholder="Search Ledger..."
                   value={searchHistory}
                   onChange={(e) => setSearchHistory(e.target.value)}
                 />
              </div>
              <select className="p-3 bg-slate-50 rounded-xl text-xs font-bold uppercase outline-none" value={filterMethod} onChange={e => setFilterMethod(e.target.value as any)}>
-                <option value="">All Payment Methods</option>
+                <option value="">All Methods</option>
                 <option value="UPI">UPI</option>
                 <option value="Cash">Cash</option>
                 <option value="Card">Card</option>
              </select>
           </div>
 
-          <div className="bg-white rounded-[2rem] md:rounded-[3rem] shadow-sm border border-slate-100 overflow-hidden">
+          <div className="bg-white rounded-[3rem] shadow-sm border border-slate-100 overflow-hidden">
              <div className="overflow-x-auto">
                <table className="w-full text-left min-w-[700px]">
                   <thead className="bg-slate-50">
                      <tr>
-                        <th className="px-10 py-6 text-[10px] text-slate-400 uppercase tracking-widest font-bold subheading">Invoice Ref</th>
-                        <th className="px-10 py-6 text-[10px] text-slate-400 uppercase tracking-widest font-bold subheading">Patient Name</th>
-                        <th className="px-10 py-6 text-[10px] text-slate-400 uppercase tracking-widest font-bold subheading">Amount</th>
-                        <th className="px-10 py-6 text-[10px] text-slate-400 uppercase tracking-widest font-bold subheading">Method</th>
-                        <th className="px-10 py-6 text-[10px] text-slate-400 uppercase tracking-widest font-bold subheading text-right">Date</th>
+                        <th className="px-10 py-6 text-[10px] text-slate-400 uppercase tracking-widest font-bold subheading">Invoice</th>
+                        <th className="px-10 py-6 text-[10px] text-slate-400 uppercase tracking-widest font-bold subheading">Patient</th>
+                        <th className="px-10 py-6 text-[10px] text-slate-400 uppercase tracking-widest font-bold subheading">Total</th>
+                        <th className="px-10 py-6 text-[10px] text-slate-400 uppercase tracking-widest font-bold subheading text-right">Actions</th>
                      </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                      {filteredHistory.map(bill => (
                         <tr key={bill.id} className="hover:bg-slate-50/50 transition-colors">
                            <td className="px-10 py-6 font-mono font-bold text-primary text-xs">#{bill.id.slice(-6)}</td>
-                           <td className="px-10 py-6 font-bold text-slate-800 text-sm">{patients.find(pat => pat.id === bill.patientId)?.firstName} {patients.find(pat => pat.id === bill.patientId)?.lastName}</td>
+                           <td className="px-10 py-6 font-bold text-slate-800 text-sm">
+                              {patients.find(pat => pat.id === bill.patientId)?.firstName} {patients.find(pat => pat.id === bill.patientId)?.lastName}
+                              <div className="text-[8px] font-bold text-slate-300 uppercase mt-1">{bill.date} • {bill.paymentMethod}</div>
+                           </td>
                            <td className="px-10 py-6 font-bold text-slate-700 font-mono text-sm">₹{bill.total.toFixed(2)}</td>
-                           <td className="px-10 py-6"><span className="px-4 py-1.5 text-[9px] font-bold uppercase rounded-full bg-blue-50 text-blue-600 tracking-widest">{bill.paymentMethod}</span></td>
-                           <td className="px-10 py-6 text-right text-[10px] font-bold text-slate-400">{bill.date}</td>
+                           <td className="px-10 py-6 text-right">
+                              <button 
+                                onClick={() => resendFile(bill)} 
+                                className="inline-flex items-center gap-2 px-6 py-2 bg-slate-100 text-slate-600 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-secondary hover:text-white transition-all shadow-sm"
+                              >
+                                {ICONS.SMS} Resend Digital Rx & Receipt
+                              </button>
+                           </td>
                         </tr>
                      ))}
-                     {filteredHistory.length === 0 && (
-                       <tr>
-                         <td colSpan={5} className="px-10 py-20 text-center text-slate-300 italic">No historical records found for the search.</td>
-                       </tr>
-                     )}
                   </tbody>
                </table>
              </div>

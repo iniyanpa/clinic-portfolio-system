@@ -91,7 +91,8 @@ const App: React.FC = () => {
 
   const handleAddPatient = async (p: Patient) => {
     await setDoc(doc(db, "patients", p.id), p);
-    triggerCommunication(p.id, 'Email', `Welcome to SLS Hospital! Your Patient ID is ${p.id}. Registry complete.`);
+    triggerCommunication(p.id, 'Email', `Welcome to SLS Hospital, ${p.firstName}! Your Patient ID is ${p.id}. We are committed to your care.`);
+    triggerCommunication(p.id, 'WhatsApp', `Greetings from SLS Hospital! Your registry is complete. UID: ${p.id}.`);
   };
 
   const handleUpdatePatient = async (updated: Patient) => {
@@ -108,7 +109,8 @@ const App: React.FC = () => {
 
   const handleAddAppointment = async (a: Appointment) => {
     await setDoc(doc(db, "appointments", a.id), a);
-    triggerCommunication(a.patientId, 'WhatsApp', `SLS Hospital: Visit confirmed for ${a.date} at ${a.time}.`);
+    const p = patients.find(pat => pat.id === a.patientId);
+    triggerCommunication(a.patientId, 'WhatsApp', `SLS Hospital: Appointment confirmed for ${p?.firstName}. Date: ${a.date}, Time: ${a.time}. Please arrive 10 mins early.`);
   };
 
   const handleUpdateApptStatus = async (id: string, status: ApptStatus, extraData?: Partial<Appointment>) => {
@@ -118,12 +120,13 @@ const App: React.FC = () => {
         status, 
         ...extraData 
       });
+      
+      if (status === 'Checked-in') {
+        const appt = appointments.find(a => a.id === id);
+        if (appt) triggerCommunication(appt.patientId, 'WhatsApp', `SLS Hospital: You have been checked in. Vitals recorded. Please wait for your turn.`);
+      }
     } catch (err) {
       console.error("Failed to update appointment status:", err);
-      const appt = appointments.find(a => a.id === id);
-      if (appt && appt.docId) {
-        await updateDoc(doc(db, "appointments", appt.docId), { status, ...extraData });
-      }
     }
   };
 
@@ -132,7 +135,12 @@ const App: React.FC = () => {
       await setDoc(doc(db, "records", record.id), record);
       await setDoc(doc(db, "prescriptions", prescription.id), prescription);
       await handleUpdateApptStatus(record.appointmentId, 'Completed');
-      triggerCommunication(record.patientId, 'WhatsApp', `Consultation complete. Order Rx-${prescription.id.slice(-4)} is ready.`);
+      
+      const p = patients.find(pat => pat.id === record.patientId);
+      triggerCommunication(record.patientId, 'WhatsApp', `SLS Hospital: Consultation with Dr. Sarah completed for ${p?.firstName}. Your digital prescription (Rx-${prescription.id.slice(-4)}) is ready at the Pharmacy.`);
+      if (record.followUpDate) {
+        triggerCommunication(record.patientId, 'Email', `Clinical Summary for ${p?.firstName}: Diagnosis - ${record.diagnosis}. Recommended follow-up on ${record.followUpDate}.`);
+      }
     } catch (err) {
       console.error("Workflow Finalization Error:", err);
       alert("Failed to finalize consultation. Check connection.");
@@ -141,11 +149,17 @@ const App: React.FC = () => {
 
   const handleAddBill = async (bill: Bill) => {
     await setDoc(doc(db, "bills", bill.id), bill);
-    triggerCommunication(bill.patientId, 'WhatsApp', `Payment of ₹${bill.total} received by SLS Hospital. Reference: ${bill.id}`);
+    const p = patients.find(pat => pat.id === bill.patientId);
+    triggerCommunication(bill.patientId, 'WhatsApp', `SLS Hospital: Payment received from ${p?.firstName}. Amount: ₹${bill.total}. Receipt No: ${bill.id}. Thank you.`);
+    triggerCommunication(bill.patientId, 'Email', `SLS Hospital - Official Receipt: Paid ₹${bill.total} via ${bill.paymentMethod} on ${bill.date}.`);
   };
 
   const handleDispense = async (pxId: string) => {
+    const px = prescriptions.find(p => p.id === pxId);
     await updateDoc(doc(db, "prescriptions", pxId), { status: 'Dispensed' });
+    if (px) {
+      triggerCommunication(px.patientId, 'WhatsApp', `SLS Hospital Pharmacy: Your medications have been dispensed. Follow instructions carefully.`);
+    }
   };
 
   const handleLogout = () => {
@@ -155,7 +169,7 @@ const App: React.FC = () => {
   };
 
   const triggerCommunication = async (patientId: string, type: 'WhatsApp' | 'Email', content: string) => {
-    const logId = `LOG-${Date.now()}`;
+    const logId = `LOG-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
     const log: CommunicationLog = {
       id: logId,
       patientId,
@@ -163,7 +177,12 @@ const App: React.FC = () => {
       content,
       sentAt: new Date().toISOString()
     };
-    await setDoc(doc(db, "communication_logs", logId), log);
+    try {
+      await setDoc(doc(db, "communication_logs", logId), log);
+      console.log(`[Simulated ${type}] To Patient ${patientId}: ${content}`);
+    } catch (e) {
+      console.error("Failed to log communication:", e);
+    }
   };
 
   if (!currentUser) {

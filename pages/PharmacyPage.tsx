@@ -10,6 +10,14 @@ interface PharmacyPageProps {
 }
 
 const PharmacyPage: React.FC<PharmacyPageProps> = ({ prescriptions, patients, onDispense }) => {
+  const shareToWhatsApp = (px: Prescription, p?: Patient) => {
+    if (!p) return;
+    const medList = px.medicines.map(m => `• ${m.name}: ${m.dosage} (${m.instructions})`).join('%0A');
+    const message = `Greetings from SLS Hospital!%0A%0AHello ${p.firstName},%0AHere are your prescription details (ID: ${px.id.slice(-6)}):%0A%0A${medList}%0A%0APlease follow the dosage instructions. Get well soon!`;
+    const phone = p.phone.replace(/[^0-9]/g, '');
+    window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${message}`, '_blank');
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in">
       <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
@@ -53,8 +61,15 @@ const PharmacyPage: React.FC<PharmacyPageProps> = ({ prescriptions, patients, on
                         <h4 className="font-heading text-xl text-slate-800 uppercase tracking-widest">{p?.firstName} {p?.lastName}</h4>
                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Patient ID: {p?.id}</p>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right flex flex-col items-end gap-2">
                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{px.date}</p>
+                        <button 
+                          onClick={() => shareToWhatsApp(px, p)}
+                          className="flex items-center gap-1.5 text-[9px] font-bold text-green-600 uppercase tracking-widest hover:bg-green-50 px-2 py-1 rounded-lg transition-all"
+                        >
+                          <span className="scale-75">{ICONS.SMS}</span>
+                          WhatsApp Rx
+                        </button>
                       </div>
                     </div>
 
