@@ -14,7 +14,9 @@ import {
   Plus,
   Download,
   Mail,
-  MessageSquare
+  MessageSquare,
+  Menu,
+  X
 } from 'lucide-react';
 
 export const COLORS = {
@@ -39,5 +41,7 @@ export const ICONS = {
   Plus: <Plus size={20} />,
   Download: <Download size={20} />,
   Mail: <Mail size={16} />,
-  SMS: <MessageSquare size={16} />
+  SMS: <MessageSquare size={16} />,
+  Menu: <Menu size={24} />,
+  Close: <X size={24} />
 };
