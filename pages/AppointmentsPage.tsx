@@ -18,7 +18,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
   const [checkingInApptId, setCheckingInApptId] = useState<string | null>(null);
   const [cancellingAppt, setCancellingAppt] = useState<{id: string, reason: string} | null>(null);
   
-  const [checkInVitals, setCheckInVitals] = useState({ bp: '', temp: '', pulse: '', weight: '', symptoms: '' });
+  const [checkInVitals, setCheckInVitals] = useState({ bp: '', temp: '', pulse: '', weight: '', spo2: '', sugar: '', symptoms: '' });
   const [newAppt, setNewAppt] = useState({ 
     patientId: '', 
     doctorId: '',
@@ -35,6 +35,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
     if (!newAppt.patientId || !newAppt.doctorId) return;
     addAppointment({
       id: `APP-${Date.now().toString().slice(-4)}`,
+      tenantId: '', // Added by App.tsx
       patientId: newAppt.patientId,
       doctorId: newAppt.doctorId,
       date: newAppt.date,
@@ -47,6 +48,14 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
     setNewAppt({ patientId: '', doctorId: '', date: new Date().toISOString().split('T')[0], time: '', reason: '', department: 'General Medicine' });
   };
 
+  const handleCheckInStart = (appt: Appointment) => {
+    setCheckingInApptId(appt.id);
+    setCheckInVitals({ 
+      bp: '', temp: '', pulse: '', weight: '', spo2: '', sugar: '',
+      symptoms: appt.reason // Automatically forward appointment reason to triage symptoms
+    });
+  };
+
   const handleCheckIn = () => {
     if (checkingInApptId) {
       updateAppointmentStatus(checkingInApptId, 'Checked-in', {
@@ -54,12 +63,14 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
           bp: checkInVitals.bp || 'N/A',
           temp: checkInVitals.temp || 'N/A',
           pulse: checkInVitals.pulse || 'N/A',
-          weight: checkInVitals.weight || 'N/A'
+          weight: checkInVitals.weight || 'N/A',
+          spo2: checkInVitals.spo2 || 'N/A',
+          sugarLevel: checkInVitals.sugar || 'N/A'
         },
         initialSymptoms: checkInVitals.symptoms || 'None recorded'
       });
       setCheckingInApptId(null);
-      setCheckInVitals({ bp: '', temp: '', pulse: '', weight: '', symptoms: '' });
+      setCheckInVitals({ bp: '', temp: '', pulse: '', weight: '', spo2: '', sugar: '', symptoms: '' });
     }
   };
 
@@ -95,6 +106,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
                 <div>
                   <p className="font-heading text-xl text-slate-800 leading-none mb-1 uppercase tracking-widest">{patient?.firstName} {patient?.lastName}</p>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{appt.department} • Dr. {doc?.name}</p>
+                  <p className="text-[10px] text-primary/60 italic font-medium truncate max-w-xs mt-1">Reason: {appt.reason}</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
@@ -108,7 +120,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
                 
                 {appt.status === 'Scheduled' && (
                   <button 
-                    onClick={() => setCheckingInApptId(appt.id)}
+                    onClick={() => handleCheckInStart(appt)}
                     className="px-6 py-2 bg-secondary text-white rounded-xl text-[9px] font-bold uppercase hover:bg-primary transition-all shadow-lg"
                   >
                     Check-in (Triage)
@@ -138,24 +150,32 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
                 <div className="grid grid-cols-2 gap-4">
                    <div className="space-y-1">
                       <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">BP (mmHg)</label>
-                      <input className="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none text-xs" placeholder="120/80" value={checkInVitals.bp} onChange={e => setCheckInVitals({...checkInVitals, bp: e.target.value})} />
+                      <input className="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none text-xs text-slate-900" placeholder="120/80" value={checkInVitals.bp} onChange={e => setCheckInVitals({...checkInVitals, bp: e.target.value})} />
                    </div>
                    <div className="space-y-1">
                       <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Temp (°F)</label>
-                      <input className="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none text-xs" placeholder="98.6" value={checkInVitals.temp} onChange={e => setCheckInVitals({...checkInVitals, temp: e.target.value})} />
+                      <input className="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none text-xs text-slate-900" placeholder="98.6" value={checkInVitals.temp} onChange={e => setCheckInVitals({...checkInVitals, temp: e.target.value})} />
                    </div>
                    <div className="space-y-1">
                       <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Pulse (BPM)</label>
-                      <input className="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none text-xs" placeholder="72" value={checkInVitals.pulse} onChange={e => setCheckInVitals({...checkInVitals, pulse: e.target.value})} />
+                      <input className="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none text-xs text-slate-900" placeholder="72" value={checkInVitals.pulse} onChange={e => setCheckInVitals({...checkInVitals, pulse: e.target.value})} />
                    </div>
                    <div className="space-y-1">
                       <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Weight (KG)</label>
-                      <input className="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none text-xs" placeholder="70" value={checkInVitals.weight} onChange={e => setCheckInVitals({...checkInVitals, weight: e.target.value})} />
+                      <input className="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none text-xs text-slate-900" placeholder="70" value={checkInVitals.weight} onChange={e => setCheckInVitals({...checkInVitals, weight: e.target.value})} />
+                   </div>
+                   <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">SPO2 (%)</label>
+                      <input className="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none text-xs text-slate-900" placeholder="98" value={checkInVitals.spo2} onChange={e => setCheckInVitals({...checkInVitals, spo2: e.target.value})} />
+                   </div>
+                   <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Sugar (mg/dL)</label>
+                      <input className="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none text-xs text-slate-900" placeholder="110" value={checkInVitals.sugar} onChange={e => setCheckInVitals({...checkInVitals, sugar: e.target.value})} />
                    </div>
                 </div>
                 <div className="space-y-1">
-                   <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Primary Symptoms (Findings)</label>
-                   <textarea rows={3} className="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none text-xs" placeholder="Patient reports..." value={checkInVitals.symptoms} onChange={e => setCheckInVitals({...checkInVitals, symptoms: e.target.value})} />
+                   <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Clinical Symptoms / Reason</label>
+                   <textarea rows={3} className="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none text-xs text-slate-900" placeholder="Patient reports..." value={checkInVitals.symptoms} onChange={e => setCheckInVitals({...checkInVitals, symptoms: e.target.value})} />
                 </div>
                 <div className="flex gap-4 pt-4">
                    <button onClick={() => setCheckingInApptId(null)} className="flex-1 py-4 text-slate-400 font-bold uppercase text-[10px]">Abandon</button>
@@ -174,22 +194,22 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
               <h3 className="text-xl font-heading uppercase tracking-widest leading-none">New Visit Booking</h3>
             </div>
             <form onSubmit={handleBooking} className="p-10 space-y-4">
-              <select required className="w-full p-4 bg-slate-50 border-none rounded-2xl text-sm" value={newAppt.patientId} onChange={e => setNewAppt({...newAppt, patientId: e.target.value})}>
+              <select required className="w-full p-4 bg-slate-50 border-none rounded-2xl text-sm text-slate-900" value={newAppt.patientId} onChange={e => setNewAppt({...newAppt, patientId: e.target.value})}>
                 <option value="">Choose Patient Registry Entry...</option>
                 {patients.map(p => <option key={p.id} value={p.id}>{p.firstName} {p.lastName} ({p.id})</option>)}
               </select>
-              <select required className="w-full p-4 bg-slate-50 border-none rounded-2xl text-sm" value={newAppt.department} onChange={e => setNewAppt({...newAppt, department: e.target.value})}>
+              <select required className="w-full p-4 bg-slate-50 border-none rounded-2xl text-sm text-slate-900" value={newAppt.department} onChange={e => setNewAppt({...newAppt, department: e.target.value})}>
                 {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
               </select>
-              <select required className="w-full p-4 bg-slate-50 border-none rounded-2xl text-sm" value={newAppt.doctorId} onChange={e => setNewAppt({...newAppt, doctorId: e.target.value})}>
+              <select required className="w-full p-4 bg-slate-50 border-none rounded-2xl text-sm text-slate-900" value={newAppt.doctorId} onChange={e => setNewAppt({...newAppt, doctorId: e.target.value})}>
                 <option value="">Assign Physician...</option>
                 {doctors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
               <div className="grid grid-cols-2 gap-4">
-                <input required type="date" className="w-full p-4 bg-slate-50 border-none rounded-2xl text-sm" value={newAppt.date} onChange={e => setNewAppt({...newAppt, date: e.target.value})} />
-                <input required type="time" className="w-full p-4 bg-slate-50 border-none rounded-2xl text-sm" value={newAppt.time} onChange={e => setNewAppt({...newAppt, time: e.target.value})} />
+                <input required type="date" className="w-full p-4 bg-slate-50 border-none rounded-2xl text-sm text-slate-900" value={newAppt.date} onChange={e => setNewAppt({...newAppt, date: e.target.value})} />
+                <input required type="time" className="w-full p-4 bg-slate-50 border-none rounded-2xl text-sm text-slate-900" value={newAppt.time} onChange={e => setNewAppt({...newAppt, time: e.target.value})} />
               </div>
-              <input required type="text" className="w-full p-4 bg-slate-50 border-none rounded-2xl text-sm" placeholder="Clinical Reason..." value={newAppt.reason} onChange={e => setNewAppt({...newAppt, reason: e.target.value})} />
+              <input required type="text" className="w-full p-4 bg-slate-50 border-none rounded-2xl text-sm text-slate-900" placeholder="Clinical Reason..." value={newAppt.reason} onChange={e => setNewAppt({...newAppt, reason: e.target.value})} />
               <div className="flex gap-4 pt-6">
                 <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-4 text-slate-400 font-bold text-[10px] uppercase">Discard</button>
                 <button type="submit" className="flex-1 py-4 bg-primary text-white font-heading tracking-widest uppercase rounded-2xl text-xs shadow-lg">Commit Session</button>

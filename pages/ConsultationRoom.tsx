@@ -4,24 +4,18 @@ import { GoogleGenAI } from "@google/genai";
 import { ICONS } from '../constants';
 import { Patient, Appointment, MedicalRecord, Prescription } from '../types';
 import { clinicalCollections } from '../firebase';
-import { query, where, onSnapshot } from 'firebase/firestore';
+import { query, where, onSnapshot, getDocs } from 'firebase/firestore';
 
 interface ConsultationRoomProps {
   patients: Patient[];
   appointments: Appointment[];
+  clinicName: string;
   finalizeConsultation: (record: MedicalRecord, prescription: Prescription) => void;
 }
 
-const COMMON_MEDICINES = [
-  "Paracetamol 500mg", "Amoxicillin 500mg", "Cetirizine 10mg", "Azithromycin 500mg",
-  "Pantoprazole 40mg", "Metformin 500mg", "Amlodipine 5mg", "Ibuprofen 400mg",
-  "Cough Syrup (Ascoril)", "Vitamin D3 60K", "Zincovit", "Telmisartan 40mg",
-  "Atorvastatin 10mg", "Clopidogrel 75mg", "Limcee 500mg"
-];
-
 const FOOD_INSTRUCTIONS = ["Before Food", "After Food", "With Food", "Empty Stomach"];
 
-const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointments, finalizeConsultation }) => {
+const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointments, clinicName, finalizeConsultation }) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [notes, setNotes] = useState({ diagnosis: '', remarks: '', followUpDate: '' });
   const [aiLoading, setAiLoading] = useState(false);
@@ -29,6 +23,7 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
   const [pastRecords, setPastRecords] = useState<MedicalRecord[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [selectedHistoryRecord, setSelectedHistoryRecord] = useState<MedicalRecord | null>(null);
+  const [historyPrescriptions, setHistoryPrescriptions] = useState<Record<string, Prescription>>({});
   
   const [medicines, setMedicines] = useState([{ 
     name: '', 
@@ -48,10 +43,25 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
         where("patientId", "==", currentPat.id)
       );
       
-      const unsub = onSnapshot(q, (snapshot) => {
+      const unsub = onSnapshot(q, async (snapshot) => {
         const fetched = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as MedicalRecord));
         const sorted = fetched.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setPastRecords(sorted);
+        
+        // Fetch prescriptions for history
+        const pxPromises = sorted.map(async rec => {
+           const pxQuery = query(clinicalCollections.prescriptions, where("appointmentId", "==", rec.appointmentId));
+           const pxSnap = await getDocs(pxQuery);
+           if (!pxSnap.empty) {
+             return { [rec.appointmentId]: pxSnap.docs[0].data() as Prescription };
+           }
+           return null;
+        });
+        
+        const pxResults = await Promise.all(pxPromises);
+        const pxMap = pxResults.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+        setHistoryPrescriptions(pxMap as Record<string, Prescription>);
+        
         setIsLoadingHistory(false);
       }, (err) => {
         console.error("History retrieval error:", err);
@@ -81,7 +91,6 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
   const handleFinalize = () => {
     if (!activeId || !currentPat || !currentAppt) return;
 
-    // Added missing tenantId to record object
     const record: any = {
       id: `REC-${Date.now()}`,
       tenantId: currentPat.tenantId,
@@ -91,19 +100,13 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
       date: new Date().toISOString(),
       diagnosis: notes.diagnosis || "Consultation complete - observation only",
       symptoms: currentAppt.initialSymptoms || "No symptoms recorded",
-      vitals: {
-        bp: currentAppt.vitals?.bp || "N/A",
-        temp: currentAppt.vitals?.temp || "N/A",
-        pulse: currentAppt.vitals?.pulse || "N/A",
-        weight: currentAppt.vitals?.weight || "N/A"
-      },
+      vitals: { ...currentAppt.vitals },
       notes: notes.remarks || ""
     };
 
     if (notes.followUpDate) record.followUpDate = notes.followUpDate;
     if (aiResponse) record.aiInsights = aiResponse;
 
-    // Added missing tenantId to prescription object
     const prescription: Prescription = {
       id: `RX-${Date.now()}`,
       tenantId: currentPat.tenantId,
@@ -142,9 +145,9 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
     setMedicines(copy);
   };
 
-  const toggleFreq = (idx: number, time: keyof typeof medicines[0]['freq']) => {
+  const toggleFreq = (idx: number, t: keyof typeof medicines[0]['freq']) => {
     const copy = [...medicines];
-    copy[idx].freq[time] = !copy[idx].freq[time];
+    copy[idx].freq[t] = !copy[idx].freq[t];
     setMedicines(copy);
   };
 
@@ -203,16 +206,18 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative">
-        {/* LEFT COLUMN: Current Vitals & Triage & History Side Pane */}
+        {/* LEFT COLUMN: Current Vitals & History Side Pane */}
         <div className="lg:col-span-3 space-y-8">
           <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
             <h4 className="font-heading text-xl text-slate-700 uppercase tracking-widest border-b pb-4 mb-6">Current Triage</h4>
-            <div className="space-y-4">
+            <div className="space-y-3">
                 {[
                   { label: 'BP', val: currentAppt.vitals?.bp, unit: 'mmHg' },
                   { label: 'Temp', val: currentAppt.vitals?.temp, unit: '°F' },
                   { label: 'Pulse', val: currentAppt.vitals?.pulse, unit: 'BPM' },
-                  { label: 'Weight', val: currentAppt.vitals?.weight, unit: 'KG' }
+                  { label: 'Weight', val: currentAppt.vitals?.weight, unit: 'KG' },
+                  { label: 'SPO2', val: currentAppt.vitals?.spo2, unit: '%' },
+                  { label: 'Sugar', val: currentAppt.vitals?.sugarLevel, unit: 'mg/dL' }
                 ].map(v => (
                   <div key={v.label} className="bg-slate-50 p-4 rounded-2xl flex justify-between items-center">
                     <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{v.label}</p>
@@ -221,7 +226,7 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
                 ))}
             </div>
             <div className="mt-6 pt-4 border-t border-slate-50">
-                <p className="text-[8px] font-bold text-slate-400 uppercase mb-2">Patient's Chief Complaint</p>
+                <p className="text-[8px] font-bold text-slate-400 uppercase mb-2">Chief Complaint (Initial)</p>
                 <p className="text-[11px] text-slate-600 italic leading-relaxed">"{currentAppt.initialSymptoms || 'No primary symptoms noted.'}"</p>
             </div>
           </div>
@@ -246,12 +251,9 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
                    >
                       <div className="flex justify-between items-center mb-2">
                         <p className="text-[8px] font-bold text-primary uppercase">{rec.date.split('T')[0]}</p>
-                        <span className="text-[8px] text-secondary opacity-0 group-hover:opacity-100 transition-opacity">View Full Note →</span>
+                        <span className="text-[8px] text-secondary opacity-0 group-hover:opacity-100 transition-opacity">Full Detail →</span>
                       </div>
-                      <p className="text-[10px] font-bold text-slate-800 line-clamp-1 group-hover:line-clamp-none transition-all">{rec.diagnosis}</p>
-                      <div className="mt-2 flex gap-2">
-                        <span className="text-[8px] font-mono text-slate-400">{rec.vitals.weight}kg • {rec.vitals.bp}</span>
-                      </div>
+                      <p className="text-[10px] font-bold text-slate-800 line-clamp-2">{rec.diagnosis}</p>
                    </button>
                  ))
                )}
@@ -271,19 +273,19 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
                 
                 <div className="space-y-8">
                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-primary uppercase tracking-widest subheading">Final Diagnosis</label>
-                      <textarea rows={2} className="w-full p-6 bg-slate-50 border border-slate-100 rounded-[2rem] outline-none text-sm font-bold text-slate-800 focus:ring-4 ring-primary/5 transition-all" placeholder="Enter clinical conclusion..." value={notes.diagnosis} onChange={e => setNotes({...notes, diagnosis: e.target.value})} />
+                      <label className="text-[10px] font-bold text-primary uppercase tracking-widest subheading">Final Diagnosis / Clinical Conclusion</label>
+                      <textarea rows={2} className="w-full p-6 bg-slate-50 border border-slate-100 rounded-[2rem] outline-none text-sm font-bold text-slate-800 focus:ring-4 ring-primary/5 transition-all" placeholder="Enter findings..." value={notes.diagnosis} onChange={e => setNotes({...notes, diagnosis: e.target.value})} />
                    </div>
                    <div className="space-y-2">
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest subheading">Clinical Remarks & Recommendations</label>
-                      <textarea rows={3} className="w-full p-6 bg-slate-50 border border-slate-100 rounded-[2rem] outline-none text-sm" placeholder="Additional observations, general notes..." value={notes.remarks} onChange={e => setNotes({...notes, remarks: e.target.value})} />
+                      <textarea rows={3} className="w-full p-6 bg-slate-50 border border-slate-100 rounded-[2rem] outline-none text-sm text-slate-900" placeholder="Additional observations, general notes..." value={notes.remarks} onChange={e => setNotes({...notes, remarks: e.target.value})} />
                    </div>
                 </div>
 
                 <div className="pt-8 border-t border-slate-50 flex flex-col md:flex-row md:items-center gap-6">
                    <div className="flex-1">
                       <label className="text-[10px] font-bold text-amber-600 uppercase tracking-widest subheading block mb-2">Schedule Review Visit</label>
-                      <input type="date" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none" value={notes.followUpDate} onChange={e => setNotes({...notes, followUpDate: e.target.value})} />
+                      <input type="date" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none text-slate-900" value={notes.followUpDate} onChange={e => setNotes({...notes, followUpDate: e.target.value})} />
                    </div>
                    <div className="flex-1 text-[10px] text-slate-300 font-medium italic">
                       Automated follow-up alerts will be dispatched to the patient registry upon finalization.
@@ -297,19 +299,25 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
                 </div>
                 <div className="space-y-6">
                    {medicines.map((m, idx) => (
-                     <div key={idx} className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 relative group hover:border-secondary transition-all">
+                     <div key={idx} className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 relative group hover:border-secondary transition-all shadow-sm">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                           <select className="p-4 bg-white rounded-xl text-xs font-bold border-none shadow-sm" value={m.name} onChange={e => updateMed(idx, { name: e.target.value })}>
-                              <option value="">Choose Medication...</option>
-                              {COMMON_MEDICINES.map(med => <option key={med} value={med}>{med}</option>)}
-                           </select>
-                           <div className="flex items-center gap-3">
-                              <input type="number" className="flex-1 p-4 bg-white rounded-xl text-xs font-mono border-none shadow-sm" placeholder="Qty" value={m.duration} onChange={e => updateMed(idx, { duration: e.target.value })} />
-                              <span className="text-[9px] font-bold text-slate-400 uppercase">Days</span>
+                           <div className="flex flex-col gap-1">
+                             <label className="text-[8px] font-bold text-slate-400 uppercase ml-2">Medicine Name</label>
+                             <input className="p-4 bg-white rounded-xl text-xs font-bold border border-slate-100 shadow-sm outline-none text-slate-900" placeholder="Type medicine..." value={m.name} onChange={e => updateMed(idx, { name: e.target.value })} />
                            </div>
-                           <select className="p-4 bg-white rounded-xl text-xs border-none shadow-sm" value={m.instructions} onChange={e => updateMed(idx, { instructions: e.target.value })}>
-                              {FOOD_INSTRUCTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                           </select>
+                           <div className="flex flex-col gap-1">
+                             <label className="text-[8px] font-bold text-slate-400 uppercase ml-2">Duration (Days)</label>
+                             <div className="flex items-center gap-3">
+                                <input type="number" className="flex-1 p-4 bg-white rounded-xl text-xs font-mono border border-slate-100 shadow-sm text-slate-900" placeholder="Qty" value={m.duration} onChange={e => updateMed(idx, { duration: e.target.value })} />
+                                <span className="text-[9px] font-bold text-slate-400 uppercase">Days</span>
+                             </div>
+                           </div>
+                           <div className="flex flex-col gap-1">
+                             <label className="text-[8px] font-bold text-slate-400 uppercase ml-2">Instructions</label>
+                             <select className="p-4 bg-white rounded-xl text-xs border border-slate-100 shadow-sm text-slate-900" value={m.instructions} onChange={e => updateMed(idx, { instructions: e.target.value })}>
+                                {FOOD_INSTRUCTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                             </select>
+                           </div>
                         </div>
                         <div className="flex flex-wrap gap-2">
                            {['morning', 'afternoon', 'evening', 'night'].map(t => (
@@ -341,56 +349,62 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
               <div className="bg-primary p-10 text-white flex justify-between items-center shadow-xl">
                  <div>
                     <h3 className="text-3xl font-heading uppercase tracking-widest leading-none">Archive Record</h3>
-                    <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] mt-2">Historical Physician Notes • {selectedHistoryRecord.date.split('T')[0]}</p>
+                    <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] mt-2">Clinical Archive • {selectedHistoryRecord.date.split('T')[0]}</p>
                  </div>
                  <button onClick={() => setSelectedHistoryRecord(null)} className="text-4xl text-white/50 hover:text-white transition-colors leading-none">×</button>
               </div>
               
               <div className="flex-1 overflow-y-auto p-10 space-y-10 custom-scrollbar">
-                 {/* GRID: Vitals & Core Meta */}
-                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                 <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                     {[
                       { label: 'Weight', val: selectedHistoryRecord.vitals.weight, unit: 'kg' },
                       { label: 'BP', val: selectedHistoryRecord.vitals.bp, unit: 'mmHg' },
                       { label: 'Temp', val: selectedHistoryRecord.vitals.temp, unit: '°F' },
-                      { label: 'Pulse', val: selectedHistoryRecord.vitals.pulse, unit: 'bpm' }
+                      { label: 'Pulse', val: selectedHistoryRecord.vitals.pulse, unit: 'bpm' },
+                      { label: 'SPO2', val: selectedHistoryRecord.vitals.spo2 || 'N/A', unit: '%' },
+                      { label: 'Sugar', val: selectedHistoryRecord.vitals.sugarLevel || 'N/A', unit: 'mg/dL' }
                     ].map(v => (
-                      <div key={v.label} className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                         <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest subheading mb-1">{v.label}</p>
-                         <p className="text-xl font-bold text-primary font-mono">{v.val} <span className="text-[9px] text-slate-300 font-sans">{v.unit}</span></p>
+                      <div key={v.label} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                         <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest subheading mb-1">{v.label}</p>
+                         <p className="text-sm font-bold text-primary font-mono">{v.val} <span className="text-[7px] text-slate-300 font-sans">{v.unit}</span></p>
                       </div>
                     ))}
                  </div>
 
-                 {/* Diagnosis & Narrative */}
                  <div className="space-y-8">
-                    <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100">
-                       <h4 className="text-[10px] font-bold text-primary uppercase tracking-widest subheading mb-4">Final Clinical Diagnosis</h4>
+                    <div className="p-8 bg-primary/5 rounded-[2.5rem] border border-primary/10">
+                       <h4 className="text-[10px] font-bold text-primary uppercase tracking-widest subheading mb-4">Diagnosis & Issue</h4>
                        <p className="text-xl font-bold text-slate-800 tracking-wide uppercase font-heading">{selectedHistoryRecord.diagnosis}</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                        <div className="space-y-4">
-                          <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest subheading">Symptom History</h4>
-                          <p className="text-sm text-slate-600 leading-relaxed italic">"{selectedHistoryRecord.symptoms}"</p>
+                          <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest subheading">Clinical Notes & Remarks</h4>
+                          <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{selectedHistoryRecord.notes || 'No extended remarks provided.'}</p>
                        </div>
                        <div className="space-y-4">
-                          <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest subheading">Physician Remarks</h4>
-                          <p className="text-sm text-slate-600 leading-relaxed">{selectedHistoryRecord.notes || 'No extended remarks provided.'}</p>
+                          <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest subheading">Prescribed Medications (Rx)</h4>
+                          <div className="space-y-3">
+                             {historyPrescriptions[selectedHistoryRecord.appointmentId]?.medicines.map((m, idx) => (
+                               <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex justify-between items-center">
+                                  <div>
+                                     <p className="text-xs font-bold text-slate-700">{m.name}</p>
+                                     <p className="text-[9px] text-slate-400 uppercase font-bold">{m.instructions}</p>
+                                  </div>
+                                  <div className="text-right">
+                                     <p className="text-[10px] font-bold text-primary">{m.dosage}</p>
+                                     <p className="text-[9px] text-slate-400 font-bold uppercase">{m.duration}</p>
+                                  </div>
+                               </div>
+                             )) || <p className="text-xs text-slate-300 italic">No medication data found.</p>}
+                          </div>
                        </div>
                     </div>
 
                     {selectedHistoryRecord.aiInsights && (
                        <div className="p-8 bg-secondary/5 rounded-[2.5rem] border border-secondary/10">
-                          <h4 className="text-[10px] font-bold text-secondary uppercase tracking-widest subheading mb-4">Past AI Insights</h4>
+                          <h4 className="text-[10px] font-bold text-secondary uppercase tracking-widest subheading mb-4">AI Diagnostic Insights</h4>
                           <div className="text-[11px] text-slate-500 italic whitespace-pre-wrap leading-relaxed">{selectedHistoryRecord.aiInsights}</div>
-                       </div>
-                    )}
-
-                    {selectedHistoryRecord.followUpDate && (
-                       <div className="p-6 bg-amber-50 rounded-2xl border border-amber-100 flex justify-between items-center">
-                          <p className="text-[10px] font-bold text-amber-700 uppercase tracking-widest">Follow-up was scheduled for</p>
-                          <p className="text-sm font-bold text-amber-900">{selectedHistoryRecord.followUpDate}</p>
                        </div>
                     )}
                  </div>

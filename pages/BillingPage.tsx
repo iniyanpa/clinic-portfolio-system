@@ -10,10 +10,11 @@ interface BillingPageProps {
   records: MedicalRecord[];
   prescriptions: Prescription[];
   bills: Bill[];
+  clinicName: string;
   addBill: (b: Bill) => void;
 }
 
-const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, records, prescriptions, bills, addBill }) => {
+const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, records, prescriptions, bills, clinicName, addBill }) => {
   const [activeTab, setActiveTab] = useState<'pending' | 'history'>('pending');
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>('UPI');
   const [searchHistory, setSearchHistory] = useState('');
@@ -51,64 +52,32 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
     };
   }, [bills, pendingInvoices]);
 
-  const shareCombinedToWhatsApp = (bill: Bill) => {
-    const p = patients.find(pat => pat.id === bill.patientId);
-    if (!p) return;
-
-    const record = records.find(r => r.appointmentId === bill.appointmentId);
-    const px = prescriptions.find(pr => pr.appointmentId === bill.appointmentId);
-
-    let message = `*SLS HOSPITAL - DIGITAL RECORD*%0A%0A`;
-    message += `*Hello ${p.firstName} ${p.lastName}*,%0A`;
-    message += `Thank you for choosing SLS Hospital Tirupati.%0A%0A`;
-    
-    message += `*1. PAYMENT RECEIPT*%0A`;
-    message += `Ref: ${bill.id}%0A`;
-    message += `Amount Paid: ₹${bill.total}%0A`;
-    message += `Method: ${bill.paymentMethod}%0A%0A`;
-
-    if (record) {
-      message += `*2. CLINICAL SUMMARY*%0A`;
-      message += `Diagnosis: ${record.diagnosis}%0A`;
-      message += `Vitals: BP ${record.vitals.bp}, Wt ${record.vitals.weight}kg%0A%0A`;
-    }
-
-    if (px && px.medicines.length > 0) {
-      message += `*3. PRESCRIPTION (Rx)*%0A`;
-      px.medicines.forEach(m => {
-        message += `• ${m.name} - ${m.dosage} (${m.instructions}) for ${m.duration}%0A`;
-      });
-      message += `%0A`;
-    }
-
-    message += `_Please download the full PDF from your email/portal._%0AGet well soon!`;
-
-    const phone = p.phone.replace(/[^0-9]/g, '');
-    window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${message}`, '_blank');
-  };
-
   const generateClinicalPDF = (patient: Patient, appt: Appointment, record?: MedicalRecord, prescription?: Prescription, finalizedItems?: BillItem[]) => {
     const doc = new jsPDF();
     const primaryColor = [41, 55, 140];
     const secondaryColor = [41, 186, 237];
 
+    // Header Background
     doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
     doc.rect(0, 0, 210, 50, 'F');
     
+    // Header Text
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(28);
-    doc.text('SLS HOSPITAL', 20, 25);
+    doc.text(clinicName.toUpperCase(), 20, 25);
     
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    doc.text('TIRUPATI, ANDHRA PRADESH, INDIA', 20, 33);
-    doc.text('PH: +91 877 1234567 | EMAIL: support@slshospital.com', 20, 38);
+    doc.text('CLINICAL FULFILLMENT SYSTEMS', 20, 33);
+    doc.text(`DATE: ${new Date().toLocaleDateString('en-IN')}`, 20, 38);
     
+    // Divider
     doc.setDrawColor(255, 255, 255);
     doc.setLineWidth(0.5);
     doc.line(20, 42, 190, 42);
 
+    // Section Title
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
@@ -118,6 +87,7 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
     doc.setLineWidth(1);
     doc.line(20, 68, 190, 68);
 
+    // Patient Info
     doc.setFontSize(10);
     doc.text('PATIENT REGISTRY DETAILS', 20, 80);
     doc.setFont('helvetica', 'normal');
@@ -125,17 +95,17 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
     doc.text(`Patient ID: ${patient.id}`, 20, 91);
     doc.text(`Gender/Age: ${patient.gender} • DOB: ${patient.dateOfBirth}`, 20, 96);
     
-    doc.text(`Date: ${new Date().toLocaleDateString('en-IN')}`, 140, 86);
     doc.text(`Case ID: ${appt.id}`, 140, 91);
     doc.text(`Blood Group: ${patient.bloodGroup}`, 140, 96);
 
     let y = 110;
 
+    // Assessment Info
     if (record) {
       doc.setFont('helvetica', 'bold');
       doc.text('VITALS & ASSESSMENT:', 20, y);
       doc.setFont('helvetica', 'normal');
-      doc.text(`BP: ${record.vitals.bp || 'N/A'} | Pulse: ${record.vitals.pulse || 'N/A'} | Temp: ${record.vitals.temp || 'N/A'} | Wt: ${record.vitals.weight || 'N/A'}kg`, 20, y + 6);
+      doc.text(`BP: ${record.vitals?.bp || 'N/A'} | Pulse: ${record.vitals?.pulse || 'N/A'} | Temp: ${record.vitals?.temp || 'N/A'} | Wt: ${record.vitals?.weight || 'N/A'}kg`, 20, y + 6);
       y += 18;
 
       doc.setFont('helvetica', 'bold');
@@ -146,6 +116,7 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
       y += (diagLines.length * 5) + 12;
     }
 
+    // Prescription Info
     if (prescription && prescription.medicines.length > 0) {
       doc.setFillColor(245, 247, 250);
       doc.rect(20, y, 170, 8, 'F');
@@ -168,6 +139,7 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
       });
     }
 
+    // Settlement Info
     if (finalizedItems) {
         y = Math.max(y, 230);
         doc.setFont('helvetica', 'bold');
@@ -186,10 +158,15 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
         doc.text(`TOTAL AMOUNT PAID: INR ${total.toFixed(2)}`, 20, y + 6);
     }
 
+    // Footer
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
-    doc.text('This is a digitally generated clinical document from SLS Hospital HMS.', 105, 285, { align: 'center' });
-    doc.save(`SLS_DigitalFile_${patient.firstName}_${Date.now().toString().slice(-4)}.pdf`);
+    doc.text(`This is a digitally generated clinical document from ${clinicName} Terminal.`, 105, 285, { align: 'center' });
+    
+    // Stop and Ask before downloading
+    if (window.confirm("Clinical Data PDF generated successfully. Would you like to download it now?")) {
+        doc.save(`${clinicName.replace(/\s/g, '_')}_DigitalFile_${patient.firstName}.pdf`);
+    }
   };
 
   const processPayment = (appt: Appointment) => {
@@ -198,7 +175,6 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
 
     const total = editingItems.reduce((acc, item) => acc + item.amount, 0);
 
-    // Added missing tenantId to newBill object
     const newBill: Bill = {
       id: `BILL-${Date.now().toString().slice(-6)}`,
       tenantId: p.tenantId,
@@ -212,14 +188,12 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
     };
 
     addBill(newBill);
+    
+    // Attempt to fetch matching clinical context
     const record = records.find(r => r.appointmentId === appt.id);
     const px = prescriptions.find(pr => pr.appointmentId === appt.id);
     
-    // Auto-export on completion
     generateClinicalPDF(p, appt, record, px, editingItems);
-    
-    // Auto-share text summary on completion
-    shareCombinedToWhatsApp(newBill);
 
     setEditingBillApptId(null);
     setEditingItems([
@@ -231,16 +205,15 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
   const resendFile = (bill: Bill) => {
     const p = patients.find(pat => pat.id === bill.patientId);
     const appt = appointments.find(a => a.id === bill.appointmentId);
-    if (!p || !appt) return;
+    if (!p || !appt) {
+      alert("Missing patient or appointment context. Journey incomplete.");
+      return;
+    }
 
     const record = records.find(r => r.appointmentId === bill.appointmentId);
     const px = prescriptions.find(pr => pr.appointmentId === bill.appointmentId);
 
-    // 1. Re-export PDF
     generateClinicalPDF(p, appt, record, px, bill.items);
-    
-    // 2. Resend WhatsApp
-    shareCombinedToWhatsApp(bill);
   };
 
   return (
@@ -303,12 +276,12 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
                             {editingItems.map(item => (
                               <div key={item.id} className="flex gap-2 items-center">
                                 <input 
-                                  className="flex-1 bg-white p-2 rounded-lg text-xs outline-none focus:ring-1 ring-secondary"
+                                  className="flex-1 bg-white p-2 rounded-lg text-xs outline-none focus:ring-1 ring-secondary text-slate-900"
                                   value={item.description}
                                   onChange={e => setEditingItems(editingItems.map(i => i.id === item.id ? { ...i, description: e.target.value } : i))}
                                 />
                                 <input 
-                                  className="w-20 bg-white p-2 rounded-lg text-xs outline-none focus:ring-1 ring-secondary font-mono"
+                                  className="w-20 bg-white p-2 rounded-lg text-xs outline-none focus:ring-1 ring-secondary font-mono text-slate-900"
                                   type="number"
                                   value={item.amount}
                                   onChange={e => setEditingItems(editingItems.map(i => i.id === item.id ? { ...i, amount: parseFloat(e.target.value) || 0 } : i))}
@@ -353,7 +326,7 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
                     </div>
                   </div>
                   <button onClick={() => processPayment(appt)} className="w-full py-5 bg-primary text-white font-heading text-xl uppercase tracking-widest rounded-3xl hover:bg-secondary transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3">
-                    {ICONS.Billing} Complete Payment & Share Rx
+                    {ICONS.Billing} Complete Payment & Export File
                   </button>
                </div>
              )
@@ -373,13 +346,13 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
                 </div>
                 <input
                   type="text"
-                  className="block w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-xl outline-none text-sm"
+                  className="block w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-xl outline-none text-sm text-slate-900"
                   placeholder="Search Ledger..."
                   value={searchHistory}
                   onChange={(e) => setSearchHistory(e.target.value)}
                 />
              </div>
-             <select className="p-3 bg-slate-50 rounded-xl text-xs font-bold uppercase outline-none" value={filterMethod} onChange={e => setFilterMethod(e.target.value as any)}>
+             <select className="p-3 bg-slate-50 rounded-xl text-xs font-bold uppercase outline-none text-slate-900" value={filterMethod} onChange={e => setFilterMethod(e.target.value as any)}>
                 <option value="">All Methods</option>
                 <option value="UPI">UPI</option>
                 <option value="Cash">Cash</option>
@@ -412,7 +385,7 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
                                 onClick={() => resendFile(bill)} 
                                 className="inline-flex items-center gap-2 px-6 py-2 bg-slate-100 text-slate-600 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-secondary hover:text-white transition-all shadow-sm"
                               >
-                                {ICONS.SMS} Resend Digital Rx & Receipt
+                                {ICONS.Download} Re-export Clinical File
                               </button>
                            </td>
                         </tr>

@@ -4,9 +4,9 @@ import { User, UserRole, Patient, Appointment, Bill } from '../types';
 export const MOCK_USERS: User[] = [
   { 
     id: 'D001', 
-    tenantId: 'SLS-T001',
+    tenantId: 'HF-T001',
     name: 'Dr. Sarah Wilson', 
-    email: 'sarah@slshospital.com', 
+    email: 'sarah@healflow.io', 
     role: UserRole.DOCTOR, 
     avatar: 'https://picsum.photos/seed/doc1/100/100', 
     specialization: 'Cardiologist',
@@ -14,27 +14,27 @@ export const MOCK_USERS: User[] = [
   },
   { 
     id: 'A001', 
-    tenantId: 'SLS-T001',
-    name: 'Admin SLS', 
-    email: 'admin@slshospital.com', 
+    tenantId: 'HF-T001',
+    name: 'Clinical Admin', 
+    email: 'admin@healflow.io', 
     role: UserRole.ADMIN, 
     avatar: 'https://picsum.photos/seed/admin/100/100',
     phone: '+91 9000099999'
   },
   { 
     id: 'R001', 
-    tenantId: 'SLS-T001',
+    tenantId: 'HF-T001',
     name: 'Jane Clerk', 
-    email: 'jane@slshospital.com', 
+    email: 'reception@healflow.io', 
     role: UserRole.RECEPTIONIST, 
     avatar: 'https://picsum.photos/seed/recep/100/100',
     phone: '+91 9000088888'
   },
   { 
     id: 'P001', 
-    tenantId: 'SLS-T001',
+    tenantId: 'HF-T001',
     name: 'Mike Pharma', 
-    email: 'mike@slshospital.com', 
+    email: 'pharma@healflow.io', 
     role: UserRole.PHARMACIST, 
     avatar: 'https://picsum.photos/seed/pharma/100/100',
     phone: '+91 9000077777'
@@ -43,8 +43,8 @@ export const MOCK_USERS: User[] = [
 
 export const MOCK_PATIENTS: Patient[] = [
   { 
-    id: 'SLS#1001', 
-    tenantId: 'SLS-T001',
+    id: 'HF#1001', 
+    tenantId: 'HF-T001',
     firstName: 'Robert', 
     lastName: 'Chen', 
     dateOfBirth: '1985-06-15', 
@@ -54,15 +54,14 @@ export const MOCK_PATIENTS: Patient[] = [
     bloodGroup: 'O+',
     address: 'Flat 402, Tirumala Heights, Tirupati',
     guardianName: 'Michael Chen',
-    // Added missing fatherSpouseName property to match Patient interface requirements
     fatherSpouseName: 'Michael Chen',
     motherName: 'Linda Chen',
     history: ['Hypertension'],
     registeredDate: '2024-01-15'
   },
   { 
-    id: 'SLS#1002', 
-    tenantId: 'SLS-T001',
+    id: 'HF#1002', 
+    tenantId: 'HF-T001',
     firstName: 'Alice', 
     lastName: 'Johnson', 
     dateOfBirth: '1992-11-22', 
@@ -72,7 +71,6 @@ export const MOCK_PATIENTS: Patient[] = [
     bloodGroup: 'A-',
     address: 'Bunglow 12, SV University Area, Tirupati',
     guardianName: 'George Johnson',
-    // Added missing fatherSpouseName property to match Patient interface requirements
     fatherSpouseName: 'George Johnson',
     motherName: 'Mary Johnson',
     history: ['Asthma'],
@@ -81,21 +79,20 @@ export const MOCK_PATIENTS: Patient[] = [
 ];
 
 export const MOCK_APPOINTMENTS: Appointment[] = [
-  { id: 'A001', tenantId: 'SLS-T001', patientId: 'SLS#1001', doctorId: 'D001', date: new Date().toISOString().split('T')[0], time: '10:30', status: 'Scheduled', reason: 'Routine Checkup', department: 'Cardiology' },
-  { id: 'A002', tenantId: 'SLS-T001', patientId: 'SLS#1002', doctorId: 'D001', date: new Date().toISOString().split('T')[0], time: '11:45', status: 'Completed', reason: 'Flu symptoms', department: 'General Medicine' },
+  { id: 'A001', tenantId: 'HF-T001', patientId: 'HF#1001', doctorId: 'D001', date: new Date().toISOString().split('T')[0], time: '10:30', status: 'Scheduled', reason: 'Routine Checkup', department: 'Cardiology' },
+  { id: 'A002', tenantId: 'HF-T001', patientId: 'HF#1002', doctorId: 'D001', date: new Date().toISOString().split('T')[0], time: '11:45', status: 'Completed', reason: 'Flu symptoms', department: 'General Medicine' },
 ];
 
 export const MOCK_BILLS: Bill[] = [
   { 
     id: 'BILL#5001', 
-    tenantId: 'SLS-T001',
-    patientId: 'SLS#1002', 
+    tenantId: 'HF-T001',
+    patientId: 'HF#1002', 
     appointmentId: 'A002',
     date: new Date().toISOString().split('T')[0], 
     total: 750.00, 
     status: 'Paid', 
     paymentMethod: 'UPI',
-    // Added missing 'id' field for each BillItem to match the interface definition.
     items: [
       { id: 'item-1', description: 'Consultation Fee', amount: 500 }, 
       { id: 'item-2', description: 'Registration', amount: 250 }

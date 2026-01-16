@@ -5,6 +5,7 @@ import { UserRole, User } from '../types';
 
 interface SidebarProps {
   user: User;
+  tenantName: string;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   onLogout: () => void;
@@ -12,7 +13,7 @@ interface SidebarProps {
   setIsOpen: (open: boolean) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ user, activeTab, setActiveTab, onLogout, isOpen, setIsOpen }) => {
+const Sidebar: React.FC<SidebarProps> = ({ user, tenantName, activeTab, setActiveTab, onLogout, isOpen, setIsOpen }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Matrix', icon: ICONS.Dashboard, roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.RECEPTIONIST, UserRole.PHARMACIST] },
     { id: 'patients', label: 'Registry', icon: ICONS.Patients, roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.RECEPTIONIST] },
@@ -44,11 +45,11 @@ const Sidebar: React.FC<SidebarProps> = ({ user, activeTab, setActiveTab, onLogo
             onClick={() => { setActiveTab('dashboard'); setIsOpen(false); }}
             className="text-left group transition-all duration-300 block mb-1"
           >
-            <h1 className="text-2xl font-heading tracking-widest flex items-center gap-1 leading-none italic">
-              SLS<span className="text-secondary">HOSPITAL</span>
+            <h1 className="text-xl font-heading tracking-widest flex items-center gap-1 leading-none italic uppercase">
+              {tenantName}
             </h1>
           </button>
-          <span className="text-[8px] font-bold text-white/30 tracking-[0.4em] uppercase">Tirupati SV Area Hub</span>
+          <span className="text-[8px] font-bold text-white/30 tracking-[0.4em] uppercase">Clinical Terminal</span>
           <button onClick={() => setIsOpen(false)} className="lg:hidden absolute top-8 right-4 text-white/50 hover:text-white transition-colors">
             {ICONS.Close}
           </button>

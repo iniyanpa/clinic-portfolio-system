@@ -10,7 +10,12 @@ interface Medicine {
   instructions: string;
 }
 
-const PrescriptionGenerator: React.FC = () => {
+interface Props {
+  clinicName?: string;
+  patientName?: string;
+}
+
+const PrescriptionGenerator: React.FC<Props> = ({ clinicName = "HEALFLOW CLINIC", patientName = "Patient" }) => {
   const [medicines, setMedicines] = useState<Medicine[]>([
     { name: '', dosage: '', duration: '', instructions: '' }
   ]);
@@ -33,25 +38,24 @@ const PrescriptionGenerator: React.FC = () => {
     const doc = new jsPDF();
     
     // Header
-    doc.setFillColor(41, 55, 140); // Primary color
+    doc.setFillColor(41, 55, 140); 
     doc.rect(0, 0, 210, 40, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(24);
-    doc.text('SLS HEALFLOW CLINIC', 20, 20);
+    doc.text(clinicName.toUpperCase(), 20, 20);
     doc.setFontSize(10);
-    doc.text('123 Health Plaza, Metro City, India | +91 9876543210', 20, 30);
+    doc.text('Clinical Fulfillment Systems | Digital Prescription', 20, 30);
 
     // Body
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(14);
     doc.text('PRESCRIPTION (Rx)', 20, 55);
-    doc.setDrawColor(41, 186, 237); // Secondary color
+    doc.setDrawColor(41, 186, 237); 
     doc.line(20, 58, 190, 58);
 
     doc.setFontSize(10);
-    doc.text('Patient: Robert Chen', 20, 70);
-    doc.text('Date: May 20, 2024', 150, 70);
-    doc.text('Age/Gender: 38 / Male', 20, 75);
+    doc.text(`Patient: ${patientName}`, 20, 70);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 150, 70);
 
     doc.setFontSize(12);
     doc.text('Medication List:', 20, 90);
@@ -70,9 +74,11 @@ const PrescriptionGenerator: React.FC = () => {
 
     doc.line(20, 250, 80, 250);
     doc.text('Doctor\'s Digital Signature', 20, 255);
-    doc.text('Reg No: IN-HFL-9921', 20, 260);
 
-    doc.save('prescription_Robert_Chen_Rx.pdf');
+    // Stop and Ask before downloading
+    if (window.confirm("Prescription PDF generated. Download it now?")) {
+        doc.save(`Prescription_${patientName}_Rx.pdf`);
+    }
   };
 
   return (
@@ -83,7 +89,7 @@ const PrescriptionGenerator: React.FC = () => {
           onClick={generatePDF}
           className="bg-secondary text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-opacity-90 shadow-md transition-all active:scale-95"
         >
-          {ICONS.Download} Export PDF
+          {ICONS.Download} Prepare PDF
         </button>
       </div>
 
@@ -95,7 +101,7 @@ const PrescriptionGenerator: React.FC = () => {
                 <label className="block text-[9px] font-bold text-gray-500 mb-1 uppercase tracking-widest">Medicine Name</label>
                 <input 
                   type="text" 
-                  className="w-full p-2 border border-gray-200 rounded outline-none focus:border-secondary transition-colors text-sm"
+                  className="w-full p-2 border border-gray-200 rounded outline-none focus:border-secondary transition-colors text-sm text-slate-900"
                   value={med.name}
                   onChange={(e) => updateMedicine(idx, 'name', e.target.value)}
                   placeholder="e.g. Paracetamol"
@@ -105,7 +111,7 @@ const PrescriptionGenerator: React.FC = () => {
                 <label className="block text-[9px] font-bold text-gray-500 mb-1 uppercase tracking-widest">Dosage</label>
                 <input 
                   type="text" 
-                  className="w-full p-2 border border-gray-200 rounded outline-none focus:border-secondary transition-colors text-sm"
+                  className="w-full p-2 border border-gray-200 rounded outline-none focus:border-secondary transition-colors text-sm text-slate-900"
                   value={med.dosage}
                   onChange={(e) => updateMedicine(idx, 'dosage', e.target.value)}
                   placeholder="e.g. 500mg (OD/BD)"
@@ -115,7 +121,7 @@ const PrescriptionGenerator: React.FC = () => {
                 <label className="block text-[9px] font-bold text-gray-500 mb-1 uppercase tracking-widest">Duration</label>
                 <input 
                   type="text" 
-                  className="w-full p-2 border border-gray-200 rounded outline-none focus:border-secondary transition-colors text-sm"
+                  className="w-full p-2 border border-gray-200 rounded outline-none focus:border-secondary transition-colors text-sm text-slate-900"
                   value={med.duration}
                   onChange={(e) => updateMedicine(idx, 'duration', e.target.value)}
                   placeholder="e.g. 5 Days"
@@ -125,7 +131,7 @@ const PrescriptionGenerator: React.FC = () => {
                 <label className="block text-[9px] font-bold text-gray-500 mb-1 uppercase tracking-widest">Instructions</label>
                 <input 
                   type="text" 
-                  className="w-full p-2 border border-gray-200 rounded outline-none focus:border-secondary transition-colors text-sm"
+                  className="w-full p-2 border border-gray-200 rounded outline-none focus:border-secondary transition-colors text-sm text-slate-900"
                   value={med.instructions}
                   onChange={(e) => updateMedicine(idx, 'instructions', e.target.value)}
                   placeholder="e.g. After food"
@@ -153,7 +159,7 @@ const PrescriptionGenerator: React.FC = () => {
 
       <div className="mt-6 flex items-center gap-4 text-xs text-gray-500 bg-blue-50 p-4 rounded-lg">
         <div className="text-secondary">{ICONS.Notification}</div>
-        <p>This entry will generate a <b>QR-secured Rx</b> for local pharmacy verification in India.</p>
+        <p>This entry will generate a <b>QR-secured Rx</b> for local pharmacy verification.</p>
       </div>
     </div>
   );

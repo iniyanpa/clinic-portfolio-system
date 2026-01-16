@@ -19,10 +19,10 @@ export interface Tenant {
 
 export interface User {
   id: string;
-  tenantId: string; // Scoping identifier
+  tenantId: string;
   name: string;
   email: string;
-  password?: string; // Stored in DB as requested
+  password?: string;
   role: UserRole;
   avatar: string;
   specialization?: string;
@@ -42,9 +42,18 @@ export interface Patient {
   address: string;
   guardianName: string;
   fatherSpouseName: string;
-  motherName: string;
+  motherName?: string; // Optional
   history: string[];
   registeredDate: string;
+}
+
+export interface Vitals {
+  bp: string;
+  temp: string;
+  weight: string;
+  pulse: string;
+  spo2?: string;      // Added SPO2
+  sugarLevel?: string; // Added Sugar Level
 }
 
 export interface Appointment {
@@ -58,12 +67,7 @@ export interface Appointment {
   status: ApptStatus;
   reason: string;
   cancellationReason?: string;
-  vitals?: {
-    bp: string;
-    temp: string;
-    weight: string;
-    pulse: string;
-  };
+  vitals?: Vitals;
   initialSymptoms?: string;
 }
 
@@ -76,12 +80,7 @@ export interface MedicalRecord {
   date: string;
   symptoms: string;
   diagnosis: string;
-  vitals: {
-    bp: string;
-    temp: string;
-    weight: string;
-    pulse: string;
-  };
+  vitals: Vitals;
   notes: string;
   followUpDate?: string;
   aiInsights?: string;

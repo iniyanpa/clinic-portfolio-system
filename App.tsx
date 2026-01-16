@@ -35,7 +35,7 @@ const LandingPage: React.FC<{ onGetStarted: (mode: 'signin' | 'signup') => void 
       <nav className="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-2xl border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-8 py-5 flex justify-between items-center">
           <h1 className="text-3xl font-heading tracking-widest leading-none italic text-primary">
-            SLS<span className="text-secondary">HEALFLOW</span>
+            HEAL<span className="text-secondary">FLOW</span>
           </h1>
           <div className="flex gap-4">
             <button onClick={() => onGetStarted('signin')} className="px-6 py-2 text-primary font-bold text-xs uppercase tracking-widest hover:text-secondary transition-colors">Login</button>
@@ -95,46 +95,12 @@ const LandingPage: React.FC<{ onGetStarted: (mode: 'signin' | 'signup') => void 
         </div>
       </section>
 
-      {/* Case Study: The Tirupati Project */}
-      <section className="py-40 max-w-7xl mx-auto px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
-          <div className="order-2 lg:order-1">
-            <div className="grid grid-cols-2 gap-8">
-              <div className="p-10 bg-slate-50 rounded-[3rem] space-y-2">
-                <h5 className="text-5xl font-heading text-primary">42%</h5>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Wait Time Reduction</p>
-              </div>
-              <div className="p-10 bg-primary text-white rounded-[3rem] space-y-2">
-                <h5 className="text-5xl font-heading text-secondary">100%</h5>
-                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Digital Compliance</p>
-              </div>
-              <div className="p-10 bg-secondary text-white rounded-[3rem] space-y-2 col-span-2">
-                <h5 className="text-5xl font-heading text-white">15k+</h5>
-                <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Monthly Patient Registry Nodes</p>
-              </div>
-            </div>
-          </div>
-          <div className="space-y-8 order-1 lg:order-2">
-            <span className="subheading text-secondary font-bold text-xs tracking-[0.5em] uppercase">Impact Analysis</span>
-            <h3 className="text-5xl font-heading text-primary uppercase leading-none tracking-tight">The Tirupati <br/>Expansion Success.</h3>
-            <p className="text-slate-500 text-lg leading-relaxed">
-              In early 2025, the Sri Venkateswara Medical Center deployed SLS HealFlow to unify their 12 satellite clinics. Within 6 months, administrative overhead dropped by 30%, and patient satisfaction scores reached an all-time high of 4.9/5.
-            </p>
-            <p className="text-slate-500 italic border-l-4 border-secondary pl-6">
-              "HealFlow didn't just digitize our records; it transformed our clinical workflow. The transition from checked-in to consult is now frictionless."
-              <br/>
-              <span className="font-bold text-primary block mt-4 NOT-italic text-sm uppercase tracking-widest">— Dr. Krishna Rao, Chief of Operations</span>
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* About Us: The Vision */}
       <section className="bg-primary py-40 text-white">
         <div className="max-w-4xl mx-auto px-8 text-center space-y-12">
           <h3 className="text-5xl md:text-7xl font-heading uppercase tracking-widest leading-none">Built by Doctors, <br/>For Doctors.</h3>
           <p className="text-xl text-white/70 leading-relaxed font-light">
-            Founded in Tirupati by a consortium of physicians and systems engineers, SLS HealFlow was born from the realization that outpatient care requires its own unique operating logic. We don't build generic software; we build clinical terminals that respect the physician's time and the patient's journey.
+            Founded by a consortium of physicians and systems engineers, HealFlow was born from the realization that outpatient care requires its own unique operating logic. We don't build generic software; we build clinical terminals that respect the physician's time and the patient's journey.
           </p>
           <div className="flex justify-center gap-12 pt-8">
              <div className="flex flex-col items-center gap-2">
@@ -143,13 +109,13 @@ const LandingPage: React.FC<{ onGetStarted: (mode: 'signin' | 'signup') => void 
              </div>
              <div className="flex flex-col items-center gap-2">
                 <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center">{ICONS.Records}</div>
-                <span className="text-[10px] font-bold uppercase tracking-widest opacity-60 text-secondary">Tirupati Headquartered</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest opacity-60 text-secondary">Global Reach</span>
              </div>
           </div>
         </div>
       </section>
 
-      {/* Call to Action with Detailed Form */}
+      {/* Call to Action */}
       <section className="py-40 bg-[#f8fafc]">
         <div className="max-w-7xl mx-auto px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-start">
@@ -160,8 +126,8 @@ const LandingPage: React.FC<{ onGetStarted: (mode: 'signin' | 'signup') => void 
                </p>
                <div className="space-y-6">
                  {[
-                   { icon: ICONS.Mail, text: 'deploy@slshealflow.com' },
-                   { icon: ICONS.Appointments, text: 'Visit our Tirupati SV Hub' },
+                   { icon: ICONS.Mail, text: 'deploy@healflow.io' },
+                   { icon: ICONS.Appointments, text: 'Visit our Digital Hub' },
                    { icon: ICONS.Billing, text: 'Custom Enterprise Quoting Available' }
                  ].map((item, idx) => (
                    <div key={idx} className="flex items-center gap-4 text-slate-500 font-bold uppercase tracking-widest text-xs">
@@ -188,16 +154,16 @@ const LandingPage: React.FC<{ onGetStarted: (mode: 'signin' | 'signup') => void 
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Professional Email</label>
-                      <input required type="email" className="w-full p-5 bg-slate-50 border-none rounded-2xl text-sm" value={inquiry.email} onChange={e => setInquiry({...inquiry, email: e.target.value})} />
+                      <input required type="email" className="w-full p-5 bg-slate-50 border-none rounded-2xl text-sm text-slate-900" value={inquiry.email} onChange={e => setInquiry({...inquiry, email: e.target.value})} />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Clinic / Hospital Name</label>
-                    <input required className="w-full p-5 bg-slate-50 border-none rounded-2xl text-sm" value={inquiry.clinic} onChange={e => setInquiry({...inquiry, clinic: e.target.value})} />
+                    <input required className="w-full p-5 bg-slate-50 border-none rounded-2xl text-sm text-slate-900" value={inquiry.clinic} onChange={e => setInquiry({...inquiry, clinic: e.target.value})} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Your Message / Requirement</label>
-                    <textarea rows={4} className="w-full p-5 bg-slate-50 border-none rounded-2xl text-sm" value={inquiry.message} onChange={e => setInquiry({...inquiry, message: e.target.value})} />
+                    <textarea rows={4} className="w-full p-5 bg-slate-50 border-none rounded-2xl text-sm text-slate-900" value={inquiry.message} onChange={e => setInquiry({...inquiry, message: e.target.value})} />
                   </div>
                   <button type="submit" className="w-full py-6 bg-secondary text-white font-heading uppercase text-xl tracking-[0.2em] rounded-3xl shadow-xl hover:bg-primary transition-all active:scale-95">
                     Request Full Walkthrough
@@ -213,16 +179,11 @@ const LandingPage: React.FC<{ onGetStarted: (mode: 'signin' | 'signup') => void 
         <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-12">
           <div className="text-center md:text-left space-y-4">
              <h1 className="text-4xl font-heading tracking-widest leading-none italic text-primary">
-                SLS<span className="text-secondary">HEALFLOW</span>
+                HEAL<span className="text-secondary">FLOW</span>
              </h1>
-             <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.5em]">Tirupati SV Area Hub Hub • Established 2024</p>
+             <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.5em]">Global Clinical Systems • Established 2024</p>
           </div>
-          <div className="flex gap-12 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-             <a href="#" className="hover:text-primary transition-colors">Privacy Protocol 2026</a>
-             <a href="#" className="hover:text-primary transition-colors">Terms of Terminal 2026</a>
-             <a href="#" className="hover:text-primary transition-colors">HIPAA Governance</a>
-          </div>
-          <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em]">© 2026 SLS ENTERPRISE</p>
+          <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em]">© 2026 HEALFLOW ENTERPRISE</p>
         </div>
       </footer>
     </div>
@@ -284,37 +245,37 @@ const AuthPage: React.FC<{ mode: 'signin' | 'signup', onAuth: (user: User, tenan
   };
 
   return (
-    <div className="min-h-screen bg-primary flex items-center justify-center p-4 relative">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4 relative">
       <button 
         onClick={onGoBack} 
-        className="absolute top-10 left-10 text-white/50 hover:text-white flex items-center gap-2 font-heading uppercase text-xs tracking-widest transition-all"
+        className="absolute top-10 left-10 text-primary hover:text-secondary flex items-center gap-2 font-heading uppercase text-xs tracking-widest transition-all"
       >
         {ICONS.Home} Back to Home
       </button>
 
-      <div className="bg-white w-full max-w-md rounded-[3.5rem] p-12 shadow-2xl animate-in zoom-in duration-300">
+      <div className="bg-secondary w-full max-w-md rounded-[3.5rem] p-12 shadow-2xl animate-in zoom-in duration-300 border border-white/10">
         <h2 className="text-4xl font-heading text-primary text-center uppercase tracking-widest mb-2">
           {mode === 'signup' ? 'New Clinic' : 'Sign In'}
         </h2>
-        <p className="text-center text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-10">Access the Clinical Stack</p>
+        <p className="text-center text-[10px] font-bold text-primary/60 uppercase tracking-widest mb-10">Access the Clinical Stack</p>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           {mode === 'signup' && (
             <div className="space-y-4">
-              <input required className="w-full p-4 bg-slate-50 border rounded-2xl outline-none text-sm" placeholder="Clinic / Hospital Name" value={formData.clinicName} onChange={e => setFormData({...formData, clinicName: e.target.value})} />
-              <input required className="w-full p-4 bg-slate-50 border rounded-2xl outline-none text-sm" placeholder="Administrator Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+              <input required className="w-full p-4 bg-white border-none rounded-2xl outline-none text-sm text-slate-900 placeholder:text-slate-400" placeholder="Clinic / Hospital Name" value={formData.clinicName} onChange={e => setFormData({...formData, clinicName: e.target.value})} />
+              <input required className="w-full p-4 bg-white border-none rounded-2xl outline-none text-sm text-slate-900 placeholder:text-slate-400" placeholder="Administrator Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
             </div>
           )}
-          <input required type="email" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none text-sm" placeholder="Work Email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
-          <input required type="password" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none text-sm" placeholder="Password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+          <input required type="email" className="w-full p-4 bg-white border-none rounded-2xl outline-none text-sm text-slate-900 placeholder:text-slate-400" placeholder="Work Email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+          <input required type="password" className="w-full p-4 bg-white border-none rounded-2xl outline-none text-sm text-slate-900 placeholder:text-slate-400" placeholder="Password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
           
-          <button type="submit" disabled={loading} className="w-full py-5 bg-primary text-white rounded-2xl font-heading text-xl uppercase tracking-widest shadow-xl hover:bg-secondary transition-all">
+          <button type="submit" disabled={loading} className="w-full py-5 bg-primary text-white rounded-2xl font-heading text-xl uppercase tracking-widest shadow-xl hover:bg-slate-800 transition-all">
             {loading ? 'Processing...' : (mode === 'signup' ? 'Create Account' : 'Authenticate')}
           </button>
         </form>
 
         <div className="mt-8 text-center">
-          <button onClick={onToggle} className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-primary">
+          <button onClick={onToggle} className="text-[10px] font-bold text-primary hover:text-white transition-colors uppercase tracking-widest">
             {mode === 'signup' ? 'Already have a terminal? Sign In' : 'New facility? Create your account'}
           </button>
         </div>
@@ -421,9 +382,10 @@ const App: React.FC = () => {
   if (view === 'signin' || view === 'signup') return <AuthPage mode={view} onAuth={handleAuth} onToggle={() => setView(view === 'signin' ? 'signup' : 'signin')} onGoBack={() => setView('landing')} />;
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-body text-slate-800">
+    <div className="flex min-h-screen bg-white font-body text-slate-800">
       <Sidebar 
         user={currentUser!} 
+        tenantName={currentTenant?.name || "HealFlow"}
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
         onLogout={handleLogout}
@@ -451,11 +413,11 @@ const App: React.FC = () => {
 
         <div className="p-4 md:p-10 w-full max-w-7xl mx-auto flex-1 pb-20">
           {activeTab === 'dashboard' && <Dashboard patients={patients} appointments={appointments} bills={bills} logs={commLogs} setActiveTab={setActiveTab} />}
-          {activeTab === 'patients' && <Patients patients={patients} addPatient={handleAddPatient} updatePatient={handleUpdatePatient} />}
+          {activeTab === 'patients' && <Patients patients={patients} clinicName={currentTenant?.name || "HealFlow"} addPatient={handleAddPatient} updatePatient={handleUpdatePatient} />}
           {activeTab === 'appointments' && <AppointmentsPage patients={patients} staff={staff} appointments={appointments} addAppointment={handleAddAppt} updateAppointmentStatus={handleUpdateApptStatus} />}
-          {activeTab === 'records' && <ConsultationRoom patients={patients} appointments={appointments} finalizeConsultation={handleFinalizeConsultation} />}
-          {activeTab === 'pharmacy' && <PharmacyPage prescriptions={prescriptions} patients={patients} onDispense={handleDispense} />}
-          {activeTab === 'billing' && <BillingPage patients={patients} appointments={appointments} records={records} prescriptions={prescriptions} bills={bills} addBill={handleAddBill} />}
+          {activeTab === 'records' && <ConsultationRoom patients={patients} appointments={appointments} clinicName={currentTenant?.name || "HealFlow"} finalizeConsultation={handleFinalizeConsultation} />}
+          {activeTab === 'pharmacy' && <PharmacyPage prescriptions={prescriptions} patients={patients} clinicName={currentTenant?.name || "HealFlow"} onDispense={handleDispense} />}
+          {activeTab === 'billing' && <BillingPage patients={patients} appointments={appointments} records={records} prescriptions={prescriptions} bills={bills} clinicName={currentTenant?.name || "HealFlow"} addBill={handleAddBill} />}
           {activeTab === 'staff' && <StaffManagement staff={staff} addStaff={handleAddStaff} updateStaff={handleUpdateStaff} />}
           {activeTab === 'settings' && <SettingsPage />}
         </div>

@@ -7,13 +7,18 @@ import { onSnapshot, query, where, collection, getDocs } from 'firebase/firestor
 
 interface PatientsProps {
   patients: Patient[];
+  clinicName: string;
   addPatient: (p: Patient) => Promise<void>;
   updatePatient: (p: Patient) => Promise<void>;
 }
 
-const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
+const BLOOD_GROUPS = [
+  'A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-', 
+  'A1+', 'A1-', 'A2+', 'A2-', 'A1B+', 'A1B-', 'A2B+', 'A2B-',
+  'Bombay Blood Group', 'Rare', 'Unknown'
+];
 
-const Patients: React.FC<PatientsProps> = ({ patients, addPatient, updatePatient }) => {
+const Patients: React.FC<PatientsProps> = ({ patients, clinicName, addPatient, updatePatient }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewingPatientId, setViewingPatientId] = useState<string | null>(null);
   const [patientRecords, setPatientRecords] = useState<MedicalRecord[]>([]);
@@ -61,45 +66,6 @@ const Patients: React.FC<PatientsProps> = ({ patients, addPatient, updatePatient
     }
   }, [viewingPatientId]);
 
-  const shareRecordToWhatsApp = async (rec: MedicalRecord) => {
-    const p = patients.find(pat => pat.id === rec.patientId);
-    if (!p) return;
-
-    let px: Prescription | null = null;
-    try {
-      const pxQuery = query(clinicalCollections.prescriptions, where("appointmentId", "==", rec.appointmentId));
-      const pxSnap = await getDocs(pxQuery);
-      if (!pxSnap.empty) {
-        px = pxSnap.docs[0].data() as Prescription;
-      }
-    } catch (e) { console.error(e); }
-
-    let message = `*SLS HOSPITAL - RE-SHARED CLINICAL RECORD*%0A%0A`;
-    message += `*Hello ${p.firstName}*,%0A`;
-    message += `Sharing record for visit on ${rec.date.split('T')[0]}.%0A%0A`;
-    
-    message += `*CLINICAL SUMMARY*%0A`;
-    message += `Diagnosis: ${rec.diagnosis}%0A`;
-    message += `Vitals: BP ${rec.vitals.bp}, Wt ${rec.vitals.weight}kg%0A%0A`;
-
-    if (px && px.medicines.length > 0) {
-      message += `*PRESCRIPTION (Rx)*%0A`;
-      px.medicines.forEach(m => {
-        message += `• ${m.name} - ${m.dosage} (${m.instructions})%0A`;
-      });
-      message += `%0A`;
-    }
-
-    if (rec.followUpDate) {
-      message += `*Follow-up Scheduled:* ${rec.followUpDate}%0A%0A`;
-    }
-
-    message += `Get well soon!`;
-
-    const phone = p.phone.replace(/[^0-9]/g, '');
-    window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${message}`, '_blank');
-  };
-
   useEffect(() => {
     if (editingPatient) {
       setFormData({
@@ -122,8 +88,7 @@ const Patients: React.FC<PatientsProps> = ({ patients, addPatient, updatePatient
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Mandatory field check (handled by HTML5 required, but adding logic for safety)
-    if (!formData.firstName || !formData.lastName || !formData.dob || !formData.bloodGroup || !formData.fatherSpouseName || !formData.motherName || !formData.phone) {
+    if (!formData.firstName || !formData.lastName || !formData.dob || !formData.bloodGroup || !formData.fatherSpouseName || !formData.phone) {
       alert("Please fill all mandatory fields.");
       return;
     }
@@ -135,7 +100,7 @@ const Patients: React.FC<PatientsProps> = ({ patients, addPatient, updatePatient
       } else {
         const timestamp = Date.now().toString().slice(-6);
         const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-        const nextId = `SLS-${timestamp}${random}`;
+        const nextId = `HF-${timestamp}${random}`;
         
         await addPatient({
           id: nextId,
@@ -266,7 +231,6 @@ const Patients: React.FC<PatientsProps> = ({ patients, addPatient, updatePatient
                           <div className="w-2 h-2 bg-secondary rounded-full"></div>
                           <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Consultation</p>
                        </div>
-                       <button onClick={() => shareRecordToWhatsApp(rec)} className="text-green-500 hover:scale-110 transition-transform">{ICONS.SMS}</button>
                     </div>
                     <span className="text-[8px] font-bold text-slate-300 uppercase block mb-3">{rec.date.split('T')[0]}</span>
                     
@@ -304,42 +268,42 @@ const Patients: React.FC<PatientsProps> = ({ patients, addPatient, updatePatient
             <form onSubmit={handleRegister} className="p-10 grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
               <div className="space-y-1">
                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">First Name *</label>
-                 <input required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
+                 <input required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm text-slate-900" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
               </div>
               <div className="space-y-1">
                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Last Name *</label>
-                 <input required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
+                 <input required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm text-slate-900" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
               </div>
               <div className="space-y-1">
                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">DOB *</label>
-                 <input required type="date" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm" value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})} />
+                 <input required type="date" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm text-slate-900" value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})} />
               </div>
               <div className="space-y-1">
                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Blood Group *</label>
-                 <select required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm" value={formData.bloodGroup} onChange={e => setFormData({...formData, bloodGroup: e.target.value})}>
+                 <select required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm text-slate-900" value={formData.bloodGroup} onChange={e => setFormData({...formData, bloodGroup: e.target.value})}>
                     <option value="">Select Group</option>
                     {BLOOD_GROUPS.map(bg => <option key={bg} value={bg}>{bg}</option>)}
                  </select>
               </div>
               <div className="space-y-1">
                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Father / Spouse Name *</label>
-                 <input required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm" value={formData.fatherSpouseName} onChange={e => setFormData({...formData, fatherSpouseName: e.target.value, guardianName: e.target.value})} />
+                 <input required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm text-slate-900" value={formData.fatherSpouseName} onChange={e => setFormData({...formData, fatherSpouseName: e.target.value, guardianName: e.target.value})} />
               </div>
               <div className="space-y-1">
-                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Mother Name *</label>
-                 <input required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm" value={formData.motherName} onChange={e => setFormData({...formData, motherName: e.target.value})} />
+                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Mother Name (Optional)</label>
+                 <input className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm text-slate-900" value={formData.motherName} onChange={e => setFormData({...formData, motherName: e.target.value})} />
               </div>
               <div className="space-y-1">
                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Phone Number *</label>
-                 <input required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                 <input required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm text-slate-900" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
               </div>
               <div className="space-y-1">
                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Email (Optional)</label>
-                 <input type="email" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                 <input type="email" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm text-slate-900" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
               </div>
               <div className="md:col-span-2 space-y-1">
                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Address</label>
-                 <textarea className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm" rows={2} value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
+                 <textarea className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm text-slate-900" rows={2} value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
               </div>
               <div className="md:col-span-2 flex gap-4 mt-4">
                 <button type="button" onClick={closeModal} className="flex-1 py-4 text-slate-400 font-bold uppercase text-[10px]">Abandon</button>
