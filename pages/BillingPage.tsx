@@ -101,13 +101,16 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
     let y = 110;
 
     // Assessment Info
-    if (record) {
+    const activeVitals = record?.vitals || appt.vitals;
+    if (activeVitals) {
       doc.setFont('helvetica', 'bold');
       doc.text('VITALS & ASSESSMENT:', 20, y);
       doc.setFont('helvetica', 'normal');
-      doc.text(`BP: ${record.vitals?.bp || 'N/A'} | Pulse: ${record.vitals?.pulse || 'N/A'} | Temp: ${record.vitals?.temp || 'N/A'} | Wt: ${record.vitals?.weight || 'N/A'}kg`, 20, y + 6);
+      doc.text(`BP: ${activeVitals.bp || 'N/A'} | Pulse: ${activeVitals.pulse || 'N/A'} | Temp: ${activeVitals.temp || 'N/A'} | Wt: ${activeVitals.weight || 'N/A'}kg`, 20, y + 6);
       y += 18;
+    }
 
+    if (record) {
       doc.setFont('helvetica', 'bold');
       doc.text('DIAGNOSIS:', 20, y);
       doc.setFont('helvetica', 'normal');
@@ -189,7 +192,6 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
 
     addBill(newBill);
     
-    // Attempt to fetch matching clinical context
     const record = records.find(r => r.appointmentId === appt.id);
     const px = prescriptions.find(pr => pr.appointmentId === appt.id);
     
@@ -206,7 +208,7 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
     const p = patients.find(pat => pat.id === bill.patientId);
     const appt = appointments.find(a => a.id === bill.appointmentId);
     if (!p || !appt) {
-      alert("Missing patient or appointment context. Journey incomplete.");
+      alert("System integrity error: Missing patient or appointment context.");
       return;
     }
 
@@ -218,6 +220,7 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
 
   return (
     <div className="space-y-10 animate-in fade-in">
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm group hover:border-primary transition-all">
            <div className="flex justify-between items-center mb-4">
@@ -235,7 +238,7 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
         </div>
         <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm group hover:border-amber-500 transition-all">
            <div className="flex justify-between items-center mb-4">
-             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest subheading">Incomplete Checks</p>
+             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest subheading">Unbilled Visits</p>
              <div className="text-amber-500 opacity-20 group-hover:opacity-100 transition-opacity">{ICONS.Appointments}</div>
            </div>
            <h3 className="text-3xl font-bold text-amber-500">{stats.pendingCount}</h3>
@@ -244,12 +247,12 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
 
       <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6">
         <div>
-          <h2 className="text-4xl font-heading text-primary uppercase leading-none">Accounts Desk</h2>
-          <p className="subheading text-secondary font-bold text-[10px] tracking-widest">Financial Matrix</p>
+          <h2 className="text-4xl font-heading text-primary uppercase leading-none">Financial Desk</h2>
+          <p className="subheading text-secondary font-bold text-[10px] tracking-widest">Accounting Module</p>
         </div>
-        <div className="flex bg-white rounded-2xl shadow-sm border border-slate-100 p-1">
-          <button onClick={() => setActiveTab('pending')} className={`px-8 py-3 rounded-xl text-[10px] font-bold uppercase transition-all ${activeTab === 'pending' ? 'bg-primary text-white shadow-lg' : 'text-slate-400'}`}>Unpaid Visits</button>
-          <button onClick={() => setActiveTab('history')} className={`px-8 py-3 rounded-xl text-[10px] font-bold uppercase transition-all ${activeTab === 'history' ? 'bg-primary text-white shadow-lg' : 'text-slate-400'}`}>Transaction Ledger</button>
+        <div className="flex bg-slate-50 rounded-2xl p-1 border border-slate-100 shadow-inner">
+          <button onClick={() => setActiveTab('pending')} className={`px-8 py-3 rounded-xl text-[10px] font-bold uppercase transition-all ${activeTab === 'pending' ? 'bg-primary text-white shadow-lg' : 'text-slate-400 hover:text-primary'}`}>Pending Invoices</button>
+          <button onClick={() => setActiveTab('history')} className={`px-8 py-3 rounded-xl text-[10px] font-bold uppercase transition-all ${activeTab === 'history' ? 'bg-primary text-white shadow-lg' : 'text-slate-400 hover:text-primary'}`}>Transaction Log</button>
         </div>
       </div>
 
@@ -259,51 +262,54 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
              const p = patients.find(pat => pat.id === appt.patientId);
              const isEditing = editingBillApptId === appt.id;
              return (
-               <div key={appt.id} className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 flex flex-col justify-between group hover:border-secondary transition-all">
+               <div key={appt.id} className="bg-white p-10 rounded-[3.5rem] shadow-sm border border-slate-100 flex flex-col justify-between group hover:border-secondary transition-all">
                   <div>
                     <div className="flex justify-between mb-8">
                       <div>
                         <h4 className="font-heading text-2xl text-slate-800 leading-none mb-2 uppercase tracking-widest">{p?.firstName} {p?.lastName}</h4>
                         <p className="text-[10px] text-secondary font-bold uppercase tracking-[0.2em]">{appt.id} • {appt.department}</p>
                       </div>
-                      <span className="w-12 h-12 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center font-bold">₹</span>
+                      <span className="w-14 h-14 bg-slate-50 text-secondary rounded-[1.5rem] flex items-center justify-center font-bold border border-slate-100 shadow-inner">₹</span>
                     </div>
 
-                    <div className="space-y-3 mb-8 bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
-                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-4">Billable Entries (Editable)</p>
+                    <div className="space-y-4 mb-8 bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 shadow-inner">
+                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex justify-between items-center">
+                          Breakdown Matrix
+                          <span className="text-primary font-heading">Session Details</span>
+                       </p>
                        {isEditing ? (
                          <div className="space-y-4 animate-in slide-in-from-top-4">
                             {editingItems.map(item => (
-                              <div key={item.id} className="flex gap-2 items-center">
+                              <div key={item.id} className="flex gap-3 items-center">
                                 <input 
-                                  className="flex-1 bg-white p-2 rounded-lg text-xs outline-none focus:ring-1 ring-secondary text-slate-900"
+                                  className="flex-1 bg-white p-3 rounded-xl text-xs outline-none border border-slate-100 focus:ring-2 ring-secondary/20 text-slate-900 font-bold"
                                   value={item.description}
                                   onChange={e => setEditingItems(editingItems.map(i => i.id === item.id ? { ...i, description: e.target.value } : i))}
                                 />
                                 <input 
-                                  className="w-20 bg-white p-2 rounded-lg text-xs outline-none focus:ring-1 ring-secondary font-mono text-slate-900"
+                                  className="w-24 bg-white p-3 rounded-xl text-xs outline-none border border-slate-100 focus:ring-2 ring-secondary/20 font-mono text-slate-900 font-bold text-right"
                                   type="number"
                                   value={item.amount}
                                   onChange={e => setEditingItems(editingItems.map(i => i.id === item.id ? { ...i, amount: parseFloat(e.target.value) || 0 } : i))}
                                 />
-                                <button onClick={() => setEditingItems(editingItems.filter(i => i.id !== item.id))} className="text-red-300 hover:text-red-500 text-lg leading-none">×</button>
+                                <button onClick={() => setEditingItems(editingItems.filter(i => i.id !== item.id))} className="text-red-400 hover:text-red-600 transition-colors p-1">×</button>
                               </div>
                             ))}
-                            <button onClick={() => setEditingItems([...editingItems, { id: Date.now().toString(), description: 'Add-on Service', amount: 0 }])} className="text-[9px] font-bold text-secondary uppercase hover:underline">+ Add Charge Item</button>
+                            <button onClick={() => setEditingItems([...editingItems, { id: Date.now().toString(), description: 'Facility Add-on', amount: 0 }])} className="w-full py-3 border-2 border-dashed border-slate-200 text-[9px] font-bold text-secondary uppercase hover:border-secondary transition-all rounded-xl">+ Append Entry</button>
                          </div>
                        ) : (
-                         <div className="space-y-2">
+                         <div className="space-y-3">
                            {editingItems.map(item => (
-                              <div key={item.id} className="flex justify-between text-xs text-slate-700">
-                                <span className="font-medium">{item.description}</span>
-                                <span className="font-mono">₹{item.amount.toFixed(2)}</span>
+                              <div key={item.id} className="flex justify-between text-xs text-slate-600 font-medium">
+                                <span>{item.description}</span>
+                                <span className="font-mono text-slate-800">₹{item.amount.toFixed(2)}</span>
                               </div>
                            ))}
                          </div>
                        )}
-                       <div className="pt-4 mt-2 border-t border-slate-200 flex justify-between text-xl font-bold text-primary">
-                         <span className="font-heading uppercase tracking-widest">Net Payable</span>
-                         <span className="font-mono">₹{editingItems.reduce((s, i) => s + i.amount, 0).toFixed(2)}</span>
+                       <div className="pt-6 mt-4 border-t border-slate-200 flex justify-between items-end">
+                         <span className="font-heading uppercase tracking-widest text-primary text-xl">Amount Due</span>
+                         <span className="font-mono text-2xl font-bold text-primary">₹{editingItems.reduce((s, i) => s + i.amount, 0).toFixed(2)}</span>
                        </div>
                     </div>
                     
@@ -313,79 +319,85 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
                           if (isEditing) setEditingBillApptId(null);
                           else setEditingBillApptId(appt.id);
                         }}
-                        className={`flex-1 py-3 rounded-xl text-[10px] font-bold uppercase transition-all shadow-sm ${isEditing ? 'bg-secondary text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                        className={`flex-1 py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm ${isEditing ? 'bg-secondary text-white' : 'bg-white text-slate-400 hover:text-primary border border-slate-100'}`}
                       >
-                        {isEditing ? 'Finalize Ledger' : 'Edit Bill Items'}
+                        {isEditing ? 'Confirm Ledger' : 'Modify Line Items'}
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 mb-8">
+                    <div className="grid grid-cols-3 gap-3 mb-10">
                       {(['UPI', 'Cash', 'Card'] as PaymentMethod[]).map(m => (
-                        <button key={m} onClick={() => setSelectedPayment(m)} className={`py-3 rounded-xl text-[9px] font-bold uppercase transition-all ${selectedPayment === m ? 'bg-primary text-white shadow-md' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}>{m}</button>
+                        <button key={m} onClick={() => setSelectedPayment(m)} className={`py-4 rounded-2xl text-[9px] font-bold uppercase transition-all tracking-widest ${selectedPayment === m ? 'bg-primary text-white shadow-xl translate-y-[-2px]' : 'bg-slate-50 text-slate-300 hover:bg-white border border-slate-100'}`}>{m}</button>
                       ))}
                     </div>
                   </div>
-                  <button onClick={() => processPayment(appt)} className="w-full py-5 bg-primary text-white font-heading text-xl uppercase tracking-widest rounded-3xl hover:bg-secondary transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3">
-                    {ICONS.Billing} Complete Payment & Export File
+                  <button onClick={() => processPayment(appt)} className="w-full py-6 bg-primary text-white font-heading text-xl uppercase tracking-[0.2em] rounded-[2rem] hover:bg-secondary transition-all shadow-2xl active:scale-95 flex items-center justify-center gap-4">
+                    {ICONS.Billing} Finalize Settlement
                   </button>
                </div>
              )
            })}
            {pendingInvoices.length === 0 && (
-             <div className="lg:col-span-2 text-center py-20 bg-white rounded-[3rem] border border-slate-100 border-dashed">
-                <p className="text-slate-300 italic font-medium">No pending clinical fees detected.</p>
+             <div className="lg:col-span-2 text-center py-24 bg-slate-50 rounded-[4rem] border-4 border-dashed border-white">
+                <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 text-slate-200 shadow-sm">{ICONS.Billing}</div>
+                <p className="text-slate-400 font-heading uppercase tracking-widest text-lg">No Pending Collections</p>
+                <p className="text-slate-300 text-xs mt-2 italic">All clinical sessions have been reconciled.</p>
              </div>
            )}
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-[2rem] border border-slate-100 flex flex-col md:flex-row gap-4 items-center shadow-sm">
+          <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 flex flex-col md:flex-row gap-4 items-center shadow-sm">
              <div className="relative flex-1">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300">
+                <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-slate-300">
                   {ICONS.Search}
                 </div>
                 <input
                   type="text"
-                  className="block w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-xl outline-none text-sm text-slate-900"
-                  placeholder="Search Ledger..."
+                  className="block w-full pl-14 pr-6 py-4 bg-slate-50 border-none rounded-2xl outline-none text-sm text-slate-900 font-medium"
+                  placeholder="Query Transaction History..."
                   value={searchHistory}
                   onChange={(e) => setSearchHistory(e.target.value)}
                 />
              </div>
-             <select className="p-3 bg-slate-50 rounded-xl text-xs font-bold uppercase outline-none text-slate-900" value={filterMethod} onChange={e => setFilterMethod(e.target.value as any)}>
-                <option value="">All Methods</option>
-                <option value="UPI">UPI</option>
-                <option value="Cash">Cash</option>
-                <option value="Card">Card</option>
+             <select className="p-4 bg-slate-50 rounded-2xl text-[10px] font-bold uppercase outline-none text-primary border border-slate-100" value={filterMethod} onChange={e => setFilterMethod(e.target.value as any)}>
+                <option value="">All Settlement Modes</option>
+                <option value="UPI">UPI Transfer</option>
+                <option value="Cash">Cash Liquidity</option>
+                <option value="Card">Terminal Credit/Debit</option>
              </select>
           </div>
 
-          <div className="bg-white rounded-[3rem] shadow-sm border border-slate-100 overflow-hidden">
+          <div className="bg-white rounded-[3.5rem] shadow-sm border border-slate-100 overflow-hidden">
              <div className="overflow-x-auto">
-               <table className="w-full text-left min-w-[700px]">
+               <table className="w-full text-left min-w-[800px]">
                   <thead className="bg-slate-50">
                      <tr>
-                        <th className="px-10 py-6 text-[10px] text-slate-400 uppercase tracking-widest font-bold subheading">Invoice</th>
-                        <th className="px-10 py-6 text-[10px] text-slate-400 uppercase tracking-widest font-bold subheading">Patient</th>
-                        <th className="px-10 py-6 text-[10px] text-slate-400 uppercase tracking-widest font-bold subheading">Total</th>
-                        <th className="px-10 py-6 text-[10px] text-slate-400 uppercase tracking-widest font-bold subheading text-right">Actions</th>
+                        <th className="px-12 py-8 text-[10px] text-slate-400 uppercase tracking-[0.3em] font-bold">Protocol ID</th>
+                        <th className="px-12 py-8 text-[10px] text-slate-400 uppercase tracking-[0.3em] font-bold">Patient Link</th>
+                        <th className="px-12 py-8 text-[10px] text-slate-400 uppercase tracking-[0.3em] font-bold text-center">Net Settlement</th>
+                        <th className="px-12 py-8 text-[10px] text-slate-400 uppercase tracking-[0.3em] font-bold text-right">Fulfillment</th>
                      </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                      {filteredHistory.map(bill => (
                         <tr key={bill.id} className="hover:bg-slate-50/50 transition-colors">
-                           <td className="px-10 py-6 font-mono font-bold text-primary text-xs">#{bill.id.slice(-6)}</td>
-                           <td className="px-10 py-6 font-bold text-slate-800 text-sm">
+                           <td className="px-12 py-8 font-mono font-bold text-primary text-xs tracking-widest">#{bill.id.slice(-6)}</td>
+                           <td className="px-12 py-8 font-bold text-slate-800 text-sm">
                               {patients.find(pat => pat.id === bill.patientId)?.firstName} {patients.find(pat => pat.id === bill.patientId)?.lastName}
-                              <div className="text-[8px] font-bold text-slate-300 uppercase mt-1">{bill.date} • {bill.paymentMethod}</div>
+                              <div className="flex items-center gap-3 mt-2">
+                                 <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{bill.date}</span>
+                                 <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                                 <span className="text-[8px] font-bold text-secondary uppercase tracking-widest">{bill.paymentMethod}</span>
+                              </div>
                            </td>
-                           <td className="px-10 py-6 font-bold text-slate-700 font-mono text-sm">₹{bill.total.toFixed(2)}</td>
-                           <td className="px-10 py-6 text-right">
+                           <td className="px-12 py-8 font-bold text-slate-700 font-mono text-sm text-center">₹{bill.total.toFixed(2)}</td>
+                           <td className="px-12 py-8 text-right">
                               <button 
                                 onClick={() => resendFile(bill)} 
-                                className="inline-flex items-center gap-2 px-6 py-2 bg-slate-100 text-slate-600 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-secondary hover:text-white transition-all shadow-sm"
+                                className="inline-flex items-center gap-3 px-8 py-3 bg-primary text-white rounded-2xl text-[9px] font-bold uppercase tracking-[0.2em] hover:bg-secondary transition-all shadow-lg active:scale-95"
                               >
-                                {ICONS.Download} Re-export Clinical File
+                                {ICONS.Download} Re-Export File
                               </button>
                            </td>
                         </tr>

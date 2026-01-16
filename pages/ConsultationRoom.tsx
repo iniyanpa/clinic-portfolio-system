@@ -4,6 +4,7 @@ import { GoogleGenAI } from "@google/genai";
 import { ICONS } from '../constants';
 import { Patient, Appointment, MedicalRecord, Prescription } from '../types';
 import { clinicalCollections } from '../firebase';
+// Fix: Standardize named imports from firebase/firestore to resolve module resolution errors
 import { query, where, onSnapshot, getDocs } from 'firebase/firestore';
 
 interface ConsultationRoomProps {
@@ -38,6 +39,7 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
   useEffect(() => {
     if (currentPat?.id) {
       setIsLoadingHistory(true);
+      // Fix: Ensure named query and where are called correctly
       const q = query(
         clinicalCollections.records,
         where("patientId", "==", currentPat.id)
@@ -75,13 +77,17 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
     if (!currentAppt?.initialSymptoms) return;
     setAiLoading(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      // Fix: Create a new GoogleGenAI instance right before making an API call
+      const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+      // Fix: Use ai.models.generateContent with model and contents parameters directly
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: `Analyze these symptoms for a ${currentPat?.gender} patient: "${currentAppt.initialSymptoms}". Potential past history includes: ${pastRecords.map(r => r.diagnosis).join(', ')}. Provide potential current diagnoses.`,
       });
+      // Fix: Access response.text directly (getter, not a method)
       setAiResponse(response.text || "AI analysis completed.");
     } catch (error) {
+      console.error("AI Generation Error:", error);
       setAiResponse("AI service offline.");
     } finally {
       setAiLoading(false);

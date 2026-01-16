@@ -3,18 +3,23 @@ export enum UserRole {
   ADMIN = 'Admin',
   DOCTOR = 'Doctor',
   RECEPTIONIST = 'Receptionist',
-  PHARMACIST = 'Pharmacist'
+  PHARMACIST = 'Pharmacist',
+  SUPER_ADMIN = 'SuperAdmin'
 }
 
 export type PaymentMethod = 'Cash' | 'UPI' | 'Card';
 export type ApptStatus = 'Scheduled' | 'Checked-in' | 'In-Consultation' | 'Completed' | 'Cancelled';
+export type SubscriptionPlan = 'Trial' | 'Pro-Annual';
+export type TenantStatus = 'Active' | 'Expired' | 'Suspended';
 
 export interface Tenant {
   id: string;
   name: string;
-  subdomain?: string;
   createdAt: string;
   ownerId: string;
+  plan: SubscriptionPlan;
+  status: TenantStatus;
+  expiryDate: string;
 }
 
 export interface User {
@@ -42,7 +47,7 @@ export interface Patient {
   address: string;
   guardianName: string;
   fatherSpouseName: string;
-  motherName?: string; // Optional
+  motherName?: string;
   history: string[];
   registeredDate: string;
 }
@@ -52,8 +57,8 @@ export interface Vitals {
   temp: string;
   weight: string;
   pulse: string;
-  spo2?: string;      // Added SPO2
-  sugarLevel?: string; // Added Sugar Level
+  spo2?: string;
+  sugarLevel?: string;
 }
 
 export interface Appointment {

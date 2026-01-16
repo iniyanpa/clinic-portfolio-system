@@ -1,12 +1,14 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { ICONS } from '../constants';
-import { Patient, MedicalRecord, Prescription } from '../types';
+import { Patient, MedicalRecord } from '../types';
 import { clinicalCollections } from '../firebase';
-import { onSnapshot, query, where, collection, getDocs } from 'firebase/firestore';
+// Fix: Use standard named imports from firebase/firestore to resolve module resolution errors
+import { query, where, onSnapshot } from 'firebase/firestore';
 
 interface PatientsProps {
   patients: Patient[];
+  tenantId: string;
   clinicName: string;
   addPatient: (p: Patient) => Promise<void>;
   updatePatient: (p: Patient) => Promise<void>;
@@ -18,7 +20,7 @@ const BLOOD_GROUPS = [
   'Bombay Blood Group', 'Rare', 'Unknown'
 ];
 
-const Patients: React.FC<PatientsProps> = ({ patients, clinicName, addPatient, updatePatient }) => {
+const Patients: React.FC<PatientsProps> = ({ patients, tenantId, clinicName, addPatient, updatePatient }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewingPatientId, setViewingPatientId] = useState<string | null>(null);
   const [patientRecords, setPatientRecords] = useState<MedicalRecord[]>([]);
@@ -45,11 +47,13 @@ const Patients: React.FC<PatientsProps> = ({ patients, clinicName, addPatient, u
   useEffect(() => {
     if (viewingPatientId) {
       setIsLoadingRecords(true);
+      // Fix: Correct usage of named query and where functions
       const q = query(
         clinicalCollections.records, 
         where("patientId", "==", viewingPatientId)
       );
       
+      // Fix: Correct usage of named onSnapshot function
       const unsub = onSnapshot(q, (snapshot) => {
         const fetched = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as MedicalRecord));
         const sorted = fetched.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -104,6 +108,7 @@ const Patients: React.FC<PatientsProps> = ({ patients, clinicName, addPatient, u
         
         await addPatient({
           id: nextId,
+          tenantId: tenantId,
           ...formData,
           dateOfBirth: formData.dob,
           history: [],
@@ -170,36 +175,44 @@ const Patients: React.FC<PatientsProps> = ({ patients, clinicName, addPatient, u
             <input 
               type="date" 
               className="p-3 border border-slate-200 rounded-xl text-xs text-slate-500 bg-white" 
-              value={filterRegDate} 
-              onChange={e => setFilterRegDate(e.target.value)} 
+              value={filterRegDate}
+              onChange={(e) => setFilterRegDate(e.target.value)}
             />
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left min-w-[800px]">
-              <thead>
-                <tr className="bg-slate-50/50">
-                  <th className="px-8 py-6 subheading text-[10px] text-slate-400 uppercase tracking-widest">UID</th>
-                  <th className="px-8 py-6 subheading text-[10px] text-slate-400 uppercase tracking-widest">Identity</th>
-                  <th className="px-8 py-6 subheading text-[10px] text-slate-400 uppercase tracking-widest">Details</th>
-                  <th className="px-8 py-6 subheading text-[10px] text-slate-400 uppercase tracking-widest">Date</th>
-                  <th className="px-8 py-6"></th>
+            <table className="w-full text-left">
+              <thead className="bg-slate-50/50">
+                <tr>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Case ID</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Patient Name</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Contact Info</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
+                  <th className="px-6 py-4 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filtered.map((p) => (
-                  <tr key={p.id} className={`hover:bg-slate-50/50 transition-colors group cursor-pointer ${viewingPatientId === p.id ? 'bg-secondary/5 border-l-4 border-l-secondary' : ''}`} onClick={() => setViewingPatientId(p.id)}>
-                    <td className="px-8 py-6 font-mono text-xs text-secondary font-bold">{p.id}</td>
-                    <td className="px-8 py-6">
-                      <div className="font-bold text-slate-800 text-sm">{p.firstName} {p.lastName}</div>
-                      <div className="text-[9px] text-slate-400 font-bold">{p.phone}</div>
+                {filtered.map(p => (
+                  <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4 font-mono text-xs text-primary font-bold">{p.id}</td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm font-bold text-slate-800">{p.firstName} {p.lastName}</p>
+                      <p className="text-[10px] text-slate-400">{p.gender} • {p.dateOfBirth}</p>
                     </td>
-                    <td className="px-8 py-6">
-                      <span className="text-[9px] font-bold px-2 py-0.5 bg-red-50 text-red-600 rounded-lg border border-red-100">{p.bloodGroup}</span>
+                    <td className="px-6 py-4">
+                      <p className="text-xs text-slate-600">{p.phone}</p>
+                      <p className="text-[10px] text-slate-400">{p.email}</p>
                     </td>
-                    <td className="px-8 py-6 text-[10px] font-bold text-slate-400 uppercase">{p.registeredDate}</td>
-                    <td className="px-8 py-6 text-right">
-                      <button onClick={(e) => { e.stopPropagation(); setEditingPatient(p); }} className="text-slate-300 hover:text-primary p-2 transition-colors">{ICONS.Settings}</button>
+                    <td className="px-6 py-4">
+                      <span className="px-3 py-1 bg-green-50 text-green-600 rounded-full text-[9px] font-bold uppercase tracking-widest">Registered</span>
+                    </td>
+                    <td className="px-6 py-4 text-right space-x-2">
+                      <button onClick={() => setViewingPatientId(p.id)} className="text-primary hover:text-secondary p-2 transition-colors">
+                        {ICONS.Records}
+                      </button>
+                      <button onClick={() => setEditingPatient(p)} className="text-slate-400 hover:text-primary p-2 transition-colors">
+                        {ICONS.Settings}
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -209,109 +222,101 @@ const Patients: React.FC<PatientsProps> = ({ patients, clinicName, addPatient, u
         </div>
       </div>
 
-      {viewingPatientId && (
-        <div className="w-full xl:w-[400px] bg-white rounded-[2rem] border border-slate-100 shadow-xl overflow-hidden h-fit xl:sticky xl:top-24 animate-in slide-in-from-right-8">
-           <div className="bg-primary p-6 text-white flex justify-between items-center shadow-lg">
-              <div>
-                 <h3 className="font-heading text-lg uppercase tracking-widest leading-none">Clinical History</h3>
-                 <p className="text-[9px] font-bold opacity-60 uppercase mt-1">Registry Record</p>
-              </div>
-              <button onClick={() => setViewingPatientId(null)} className="text-white/50 hover:text-white transition-colors text-2xl leading-none">×</button>
-           </div>
-           <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar bg-slate-50/30">
-              {isLoadingRecords ? (
-                <div className="py-20 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest animate-pulse">Querying History...</div>
-              ) : patientRecords.length === 0 ? (
-                <div className="text-center py-20 opacity-30 italic text-sm border-2 border-dashed border-slate-200 rounded-3xl">No consultation logs.</div>
-              ) : (
-                patientRecords.map((rec) => (
-                  <div key={rec.id} className="p-5 bg-white rounded-3xl border border-slate-100 shadow-sm relative group hover:border-secondary transition-all">
-                    <div className="flex justify-between items-start mb-3">
-                       <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-secondary rounded-full"></div>
-                          <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Consultation</p>
-                       </div>
-                    </div>
-                    <span className="text-[8px] font-bold text-slate-300 uppercase block mb-3">{rec.date.split('T')[0]}</span>
-                    
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Diagnosis</p>
-                        <p className="text-xs font-bold text-slate-800">{rec.diagnosis || 'General Checkup'}</p>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl">
-                        <div>
-                           <p className="text-[7px] font-bold text-slate-300 uppercase">Weight</p>
-                           <p className="text-[10px] text-slate-600 font-bold">{rec.vitals.weight || '--'} kg</p>
-                        </div>
-                        <div>
-                           <p className="text-[7px] font-bold text-slate-300 uppercase">BP</p>
-                           <p className="text-[10px] text-slate-600 font-bold">{rec.vitals.bp || '--'}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-           </div>
-        </div>
-      )}
-
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/40 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden my-auto animate-in zoom-in duration-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/20 backdrop-blur-md p-4">
+          <div className="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300">
             <div className="bg-primary p-10 text-white flex justify-between items-center">
-               <h3 className="text-2xl font-heading uppercase tracking-widest">{editingPatient ? 'Update Case' : 'New Registry Entry'}</h3>
-               <button onClick={closeModal} className="text-xl">×</button>
+              <div>
+                <h3 className="text-2xl font-heading uppercase tracking-widest">{editingPatient ? 'Update Case File' : 'Initialize Patient Node'}</h3>
+                <p className="text-[9px] font-bold opacity-60 uppercase mt-2">Core Registry Deployment</p>
+              </div>
+              <button onClick={closeModal} className="text-4xl leading-none hover:text-secondary transition-colors">×</button>
             </div>
-            <form onSubmit={handleRegister} className="p-10 grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
-              <div className="space-y-1">
-                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">First Name *</label>
-                 <input required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm text-slate-900" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
+            
+            <form onSubmit={handleRegister} className="p-10 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">First Name *</label>
+                  <input required className="w-full p-4 bg-slate-50 rounded-2xl outline-none text-sm text-slate-900 border border-slate-100" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Last Name *</label>
+                  <input required className="w-full p-4 bg-slate-50 rounded-2xl outline-none text-sm text-slate-900 border border-slate-100" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Date of Birth *</label>
+                  <input required type="date" className="w-full p-4 bg-slate-50 rounded-2xl outline-none text-sm text-slate-900 border border-slate-100" value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})} />
+                </div>
               </div>
-              <div className="space-y-1">
-                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Last Name *</label>
-                 <input required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm text-slate-900" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
-              </div>
-              <div className="space-y-1">
-                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">DOB *</label>
-                 <input required type="date" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm text-slate-900" value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})} />
-              </div>
-              <div className="space-y-1">
-                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Blood Group *</label>
-                 <select required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm text-slate-900" value={formData.bloodGroup} onChange={e => setFormData({...formData, bloodGroup: e.target.value})}>
-                    <option value="">Select Group</option>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Gender</label>
+                  <select className="w-full p-4 bg-slate-50 rounded-2xl outline-none text-sm text-slate-900 border border-slate-100" value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value as any})}>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Blood Group *</label>
+                  <select required className="w-full p-4 bg-slate-50 rounded-2xl outline-none text-sm text-slate-900 border border-slate-100" value={formData.bloodGroup} onChange={e => setFormData({...formData, bloodGroup: e.target.value})}>
+                    <option value="">Select Group...</option>
                     {BLOOD_GROUPS.map(bg => <option key={bg} value={bg}>{bg}</option>)}
-                 </select>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Phone Number *</label>
+                  <input required className="w-full p-4 bg-slate-50 rounded-2xl outline-none text-sm text-slate-900 border border-slate-100" placeholder="+91" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                </div>
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Guardian / Next of Kin</label>
+                  <input className="w-full p-4 bg-slate-50 rounded-2xl outline-none text-sm text-slate-900 border border-slate-100" value={formData.guardianName} onChange={e => setFormData({...formData, guardianName: e.target.value})} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Father / Spouse Name *</label>
+                  <input required className="w-full p-4 bg-slate-50 rounded-2xl outline-none text-sm text-slate-900 border border-slate-100" value={formData.fatherSpouseName} onChange={e => setFormData({...formData, fatherSpouseName: e.target.value})} />
+                </div>
+              </div>
+
               <div className="space-y-1">
-                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Father / Spouse Name *</label>
-                 <input required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm text-slate-900" value={formData.fatherSpouseName} onChange={e => setFormData({...formData, fatherSpouseName: e.target.value, guardianName: e.target.value})} />
+                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Full Residential Address</label>
+                <textarea rows={2} className="w-full p-4 bg-slate-50 rounded-2xl outline-none text-sm text-slate-900 border border-slate-100" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
               </div>
-              <div className="space-y-1">
-                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Mother Name (Optional)</label>
-                 <input className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm text-slate-900" value={formData.motherName} onChange={e => setFormData({...formData, motherName: e.target.value})} />
-              </div>
-              <div className="space-y-1">
-                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Phone Number *</label>
-                 <input required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm text-slate-900" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
-              </div>
-              <div className="space-y-1">
-                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Email (Optional)</label>
-                 <input type="email" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm text-slate-900" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
-              </div>
-              <div className="md:col-span-2 space-y-1">
-                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Address</label>
-                 <textarea className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm text-slate-900" rows={2} value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
-              </div>
-              <div className="md:col-span-2 flex gap-4 mt-4">
-                <button type="button" onClick={closeModal} className="flex-1 py-4 text-slate-400 font-bold uppercase text-[10px]">Abandon</button>
-                <button type="submit" disabled={isSaving} className="flex-1 py-4 bg-primary text-white font-heading uppercase rounded-2xl hover:bg-secondary text-xs shadow-lg disabled:opacity-50">
-                  {isSaving ? 'Saving...' : (editingPatient ? 'Update Changes' : 'Commit Registry')}
+
+              <div className="flex gap-4 pt-4">
+                <button type="button" onClick={closeModal} className="flex-1 py-4 text-slate-400 font-bold uppercase text-[10px] tracking-widest">Cancel</button>
+                <button type="submit" disabled={isSaving} className="flex-2 py-4 bg-primary text-white rounded-2xl font-heading uppercase tracking-widest text-xs shadow-xl hover:bg-secondary transition-all">
+                  {isSaving ? 'Processing...' : (editingPatient ? 'Commit Changes' : 'Initialize Registry')}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {viewingPatientId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/40 backdrop-blur-md p-4">
+          <div className="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden animate-in fade-in duration-300">
+            <div className="bg-secondary p-8 text-white flex justify-between items-center">
+              <h3 className="text-xl font-heading uppercase tracking-widest">Clinical History Archive</h3>
+              <button onClick={() => setViewingPatientId(null)} className="text-3xl">×</button>
+            </div>
+            <div className="p-8 space-y-4 max-h-[60vh] overflow-y-auto">
+              {isLoadingRecords ? <p className="text-center py-10 text-slate-400 italic">Syncing records...</p> : 
+               patientRecords.length === 0 ? <p className="text-center py-10 text-slate-300 italic">No previous clinical records found.</p> :
+               patientRecords.map(rec => (
+                 <div key={rec.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                   <p className="text-[10px] font-bold text-primary mb-1">{rec.date.split('T')[0]}</p>
+                   <p className="text-sm font-bold text-slate-800">{rec.diagnosis}</p>
+                   <p className="text-xs text-slate-500 mt-1 line-clamp-2">{rec.notes}</p>
+                 </div>
+               ))
+              }
+            </div>
           </div>
         </div>
       )}
