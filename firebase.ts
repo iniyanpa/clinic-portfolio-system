@@ -1,7 +1,6 @@
 
-// Fix: Switch to named imports for better resolution in modern environments
-import { initializeApp, getApp, getApps } from "firebase/app";
-// Fix: Use standard named imports from firebase/firestore to resolve module resolution errors
+import { initializeApp, getApps, getApp } from "firebase/app";
+// Fix: Use correct modular exports for Firestore
 import { getFirestore, collection } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -23,19 +22,18 @@ export const isFirebaseConfigured = () => {
 
 /**
  * Initialize the Firebase application instance.
- * Uses named exports initializeApp, getApp, and getApps.
  */
 const app = getApps().length === 0 
   ? initializeApp(firebaseConfig) 
   : getApp();
 
-// Fix: Use named getFirestore function
+// Initialize Firestore instance correctly using the modular SDK
 export const db = getFirestore(app);
 
 /**
  * Global Firestore collection references for clinical data entities.
+ * Using the modular collection() function with the initialized Firestore instance.
  */
-// Fix: Ensure all collections are initialized using the named collection function
 export const clinicalCollections = {
   tenants: collection(db, "tenants"),
   users: collection(db, "users"),

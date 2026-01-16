@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
+// Fix: Import modular functions from firebase/firestore
+import { onSnapshot, query, where } from "firebase/firestore";
 import { ICONS } from '../constants';
 import { Patient, MedicalRecord } from '../types';
 import { clinicalCollections } from '../firebase';
-// Fix: Use standard named imports from firebase/firestore to resolve module resolution errors
-import { query, where, onSnapshot } from 'firebase/firestore';
 
 interface PatientsProps {
   patients: Patient[];
@@ -47,13 +47,8 @@ const Patients: React.FC<PatientsProps> = ({ patients, tenantId, clinicName, add
   useEffect(() => {
     if (viewingPatientId) {
       setIsLoadingRecords(true);
-      // Fix: Correct usage of named query and where functions
-      const q = query(
-        clinicalCollections.records, 
-        where("patientId", "==", viewingPatientId)
-      );
+      const q = query(clinicalCollections.records, where("patientId", "==", viewingPatientId));
       
-      // Fix: Correct usage of named onSnapshot function
       const unsub = onSnapshot(q, (snapshot) => {
         const fetched = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as MedicalRecord));
         const sorted = fetched.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

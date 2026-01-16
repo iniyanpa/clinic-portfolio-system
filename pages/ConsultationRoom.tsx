@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
+// Fix: Correct modular imports for firestore
+import { onSnapshot, query, where, getDocs } from "firebase/firestore";
 import { GoogleGenAI } from "@google/genai";
 import { ICONS } from '../constants';
 import { Patient, Appointment, MedicalRecord, Prescription } from '../types';
-import { clinicalCollections } from '../firebase';
-// Fix: Standardize named imports from firebase/firestore to resolve module resolution errors
-import { query, where, onSnapshot, getDocs } from 'firebase/firestore';
+import { clinicalCollections, db } from '../firebase';
 
 interface ConsultationRoomProps {
   patients: Patient[];
@@ -39,11 +39,7 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
   useEffect(() => {
     if (currentPat?.id) {
       setIsLoadingHistory(true);
-      // Fix: Ensure named query and where are called correctly
-      const q = query(
-        clinicalCollections.records,
-        where("patientId", "==", currentPat.id)
-      );
+      const q = query(clinicalCollections.records, where("patientId", "==", currentPat.id));
       
       const unsub = onSnapshot(q, async (snapshot) => {
         const fetched = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as MedicalRecord));
@@ -77,14 +73,13 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
     if (!currentAppt?.initialSymptoms) return;
     setAiLoading(true);
     try {
-      // Fix: Create a new GoogleGenAI instance right before making an API call
+      // Initialize Gemini with process.env.API_KEY right before use per guidelines
       const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
-      // Fix: Use ai.models.generateContent with model and contents parameters directly
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: `Analyze these symptoms for a ${currentPat?.gender} patient: "${currentAppt.initialSymptoms}". Potential past history includes: ${pastRecords.map(r => r.diagnosis).join(', ')}. Provide potential current diagnoses.`,
       });
-      // Fix: Access response.text directly (getter, not a method)
+      // Correct extraction of text output from response.text property
       setAiResponse(response.text || "AI analysis completed.");
     } catch (error) {
       console.error("AI Generation Error:", error);
@@ -395,7 +390,7 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
                                <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex justify-between items-center">
                                   <div>
                                      <p className="text-xs font-bold text-slate-700">{m.name}</p>
-                                     <p className="text-[9px] text-slate-400 uppercase font-bold">{m.instructions}</p>
+                                     <p className="text-[9px] text-slate-400 uppercase font-bold tracking-widest">{m.instructions}</p>
                                   </div>
                                   <div className="text-right">
                                      <p className="text-[10px] font-bold text-primary">{m.dosage}</p>
