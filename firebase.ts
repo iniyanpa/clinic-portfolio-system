@@ -1,11 +1,7 @@
 
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, orderBy, setDoc } from "firebase/firestore";
+import { getFirestore, collection } from "firebase/firestore";
 
-/**
- * FIREBASE LIVE CONNECTION
- * Credentials provided by user for project: sls-hospital
- */
 const firebaseConfig = {
   apiKey: "AIzaSyAmuUlQtEXgKSZRrn-Ri5-Pa4fe3foUzFA",
   authDomain: "sls-hospital.firebaseapp.com",
@@ -16,7 +12,6 @@ const firebaseConfig = {
   measurementId: "G-14FBFP0Z76"
 };
 
-// Connectivity Check: Returns true because the user has provided real credentials
 export const isFirebaseConfigured = () => {
   return firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith("AIza");
 };
@@ -24,8 +19,9 @@ export const isFirebaseConfigured = () => {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 export const db = getFirestore(app);
 
-// Helper for Firestore interactions
 export const clinicalCollections = {
+  tenants: collection(db, "tenants"),
+  users: collection(db, "users"),
   patients: collection(db, "patients"),
   staff: collection(db, "staff"),
   appointments: collection(db, "appointments"),

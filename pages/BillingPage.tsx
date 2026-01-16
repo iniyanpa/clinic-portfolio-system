@@ -198,8 +198,10 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
 
     const total = editingItems.reduce((acc, item) => acc + item.amount, 0);
 
+    // Added missing tenantId to newBill object
     const newBill: Bill = {
       id: `BILL-${Date.now().toString().slice(-6)}`,
+      tenantId: p.tenantId,
       patientId: p.id,
       appointmentId: appt.id,
       date: new Date().toISOString().split('T')[0],

@@ -4,6 +4,7 @@ import { User, UserRole, Patient, Appointment, Bill } from '../types';
 export const MOCK_USERS: User[] = [
   { 
     id: 'D001', 
+    tenantId: 'SLS-T001',
     name: 'Dr. Sarah Wilson', 
     email: 'sarah@slshospital.com', 
     role: UserRole.DOCTOR, 
@@ -13,6 +14,7 @@ export const MOCK_USERS: User[] = [
   },
   { 
     id: 'A001', 
+    tenantId: 'SLS-T001',
     name: 'Admin SLS', 
     email: 'admin@slshospital.com', 
     role: UserRole.ADMIN, 
@@ -21,6 +23,7 @@ export const MOCK_USERS: User[] = [
   },
   { 
     id: 'R001', 
+    tenantId: 'SLS-T001',
     name: 'Jane Clerk', 
     email: 'jane@slshospital.com', 
     role: UserRole.RECEPTIONIST, 
@@ -29,6 +32,7 @@ export const MOCK_USERS: User[] = [
   },
   { 
     id: 'P001', 
+    tenantId: 'SLS-T001',
     name: 'Mike Pharma', 
     email: 'mike@slshospital.com', 
     role: UserRole.PHARMACIST, 
@@ -40,6 +44,7 @@ export const MOCK_USERS: User[] = [
 export const MOCK_PATIENTS: Patient[] = [
   { 
     id: 'SLS#1001', 
+    tenantId: 'SLS-T001',
     firstName: 'Robert', 
     lastName: 'Chen', 
     dateOfBirth: '1985-06-15', 
@@ -57,6 +62,7 @@ export const MOCK_PATIENTS: Patient[] = [
   },
   { 
     id: 'SLS#1002', 
+    tenantId: 'SLS-T001',
     firstName: 'Alice', 
     lastName: 'Johnson', 
     dateOfBirth: '1992-11-22', 
@@ -75,13 +81,14 @@ export const MOCK_PATIENTS: Patient[] = [
 ];
 
 export const MOCK_APPOINTMENTS: Appointment[] = [
-  { id: 'A001', patientId: 'SLS#1001', doctorId: 'D001', date: new Date().toISOString().split('T')[0], time: '10:30', status: 'Scheduled', reason: 'Routine Checkup', department: 'Cardiology' },
-  { id: 'A002', patientId: 'SLS#1002', doctorId: 'D001', date: new Date().toISOString().split('T')[0], time: '11:45', status: 'Completed', reason: 'Flu symptoms', department: 'General Medicine' },
+  { id: 'A001', tenantId: 'SLS-T001', patientId: 'SLS#1001', doctorId: 'D001', date: new Date().toISOString().split('T')[0], time: '10:30', status: 'Scheduled', reason: 'Routine Checkup', department: 'Cardiology' },
+  { id: 'A002', tenantId: 'SLS-T001', patientId: 'SLS#1002', doctorId: 'D001', date: new Date().toISOString().split('T')[0], time: '11:45', status: 'Completed', reason: 'Flu symptoms', department: 'General Medicine' },
 ];
 
 export const MOCK_BILLS: Bill[] = [
   { 
     id: 'BILL#5001', 
+    tenantId: 'SLS-T001',
     patientId: 'SLS#1002', 
     appointmentId: 'A002',
     date: new Date().toISOString().split('T')[0], 

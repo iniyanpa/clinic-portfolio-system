@@ -81,8 +81,10 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
   const handleFinalize = () => {
     if (!activeId || !currentPat || !currentAppt) return;
 
+    // Added missing tenantId to record object
     const record: any = {
       id: `REC-${Date.now()}`,
+      tenantId: currentPat.tenantId,
       appointmentId: activeId,
       patientId: currentPat.id,
       doctorId: '1', 
@@ -101,8 +103,10 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
     if (notes.followUpDate) record.followUpDate = notes.followUpDate;
     if (aiResponse) record.aiInsights = aiResponse;
 
+    // Added missing tenantId to prescription object
     const prescription: Prescription = {
       id: `RX-${Date.now()}`,
+      tenantId: currentPat.tenantId,
       patientId: currentPat.id,
       appointmentId: activeId,
       date: new Date().toISOString().split('T')[0],

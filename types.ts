@@ -9,10 +9,20 @@ export enum UserRole {
 export type PaymentMethod = 'Cash' | 'UPI' | 'Card';
 export type ApptStatus = 'Scheduled' | 'Checked-in' | 'In-Consultation' | 'Completed' | 'Cancelled';
 
-export interface User {
+export interface Tenant {
   id: string;
   name: string;
+  subdomain?: string;
+  createdAt: string;
+  ownerId: string;
+}
+
+export interface User {
+  id: string;
+  tenantId: string; // Scoping identifier
+  name: string;
   email: string;
+  password?: string; // Stored in DB as requested
   role: UserRole;
   avatar: string;
   specialization?: string;
@@ -21,6 +31,7 @@ export interface User {
 
 export interface Patient {
   id: string;
+  tenantId: string;
   firstName: string;
   lastName: string;
   dateOfBirth: string;
@@ -38,7 +49,7 @@ export interface Patient {
 
 export interface Appointment {
   id: string;
-  docId?: string; // Firestore internal ID
+  tenantId: string;
   patientId: string;
   doctorId: string;
   date: string;
@@ -47,7 +58,6 @@ export interface Appointment {
   status: ApptStatus;
   reason: string;
   cancellationReason?: string;
-  // Pre-consultation data entered at check-in
   vitals?: {
     bp: string;
     temp: string;
@@ -59,6 +69,7 @@ export interface Appointment {
 
 export interface MedicalRecord {
   id: string;
+  tenantId: string;
   appointmentId: string;
   patientId: string;
   doctorId: string;
@@ -78,6 +89,7 @@ export interface MedicalRecord {
 
 export interface Prescription {
   id: string;
+  tenantId: string;
   patientId: string;
   appointmentId: string;
   date: string;
@@ -98,6 +110,7 @@ export interface BillItem {
 
 export interface Bill {
   id: string;
+  tenantId: string;
   patientId: string;
   appointmentId: string;
   date: string;
@@ -109,6 +122,7 @@ export interface Bill {
 
 export interface CommunicationLog {
   id: string;
+  tenantId: string;
   patientId: string;
   type: 'WhatsApp' | 'Email';
   content: string;
