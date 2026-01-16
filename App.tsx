@@ -229,7 +229,7 @@ const LandingPage: React.FC<{ onGetStarted: (mode: 'signin' | 'signup') => void 
   );
 };
 
-const AuthPage: React.FC<{ mode: 'signin' | 'signup', onAuth: (user: User, tenant: Tenant) => void, onToggle: () => void }> = ({ mode, onAuth, onToggle }) => {
+const AuthPage: React.FC<{ mode: 'signin' | 'signup', onAuth: (user: User, tenant: Tenant) => void, onToggle: () => void, onGoBack: () => void }> = ({ mode, onAuth, onToggle, onGoBack }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', password: '', clinicName: '' });
 
@@ -284,7 +284,14 @@ const AuthPage: React.FC<{ mode: 'signin' | 'signup', onAuth: (user: User, tenan
   };
 
   return (
-    <div className="min-h-screen bg-primary flex items-center justify-center p-4">
+    <div className="min-h-screen bg-primary flex items-center justify-center p-4 relative">
+      <button 
+        onClick={onGoBack} 
+        className="absolute top-10 left-10 text-white/50 hover:text-white flex items-center gap-2 font-heading uppercase text-xs tracking-widest transition-all"
+      >
+        {ICONS.Home} Back to Home
+      </button>
+
       <div className="bg-white w-full max-w-md rounded-[3.5rem] p-12 shadow-2xl animate-in zoom-in duration-300">
         <h2 className="text-4xl font-heading text-primary text-center uppercase tracking-widest mb-2">
           {mode === 'signup' ? 'New Clinic' : 'Sign In'}
@@ -411,7 +418,7 @@ const App: React.FC = () => {
   };
 
   if (view === 'landing') return <LandingPage onGetStarted={setView} />;
-  if (view === 'signin' || view === 'signup') return <AuthPage mode={view} onAuth={handleAuth} onToggle={() => setView(view === 'signin' ? 'signup' : 'signin')} />;
+  if (view === 'signin' || view === 'signup') return <AuthPage mode={view} onAuth={handleAuth} onToggle={() => setView(view === 'signin' ? 'signup' : 'signin')} onGoBack={() => setView('landing')} />;
 
   return (
     <div className="flex min-h-screen bg-slate-50 font-body text-slate-800">

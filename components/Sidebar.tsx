@@ -71,6 +71,19 @@ const Sidebar: React.FC<SidebarProps> = ({ user, activeTab, setActiveTab, onLogo
               <span className="font-heading text-xs uppercase tracking-[0.2em]">{item.label}</span>
             </button>
           ))}
+          
+          <div className="pt-8 pb-4">
+            <div className="h-px bg-white/10 mx-4 mb-4"></div>
+            <button 
+              onClick={onLogout}
+              className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 text-white/30 hover:bg-white/5 hover:text-secondary group"
+            >
+              <span className="group-hover:scale-110 transition-transform">
+                {ICONS.Home}
+              </span>
+              <span className="font-heading text-xs uppercase tracking-[0.2em]">Return to Portal</span>
+            </button>
+          </div>
         </nav>
 
         <div className="p-6 border-t border-white/5 relative z-10">

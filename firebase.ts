@@ -1,5 +1,5 @@
-
-import { initializeApp, getApp, getApps } from "firebase/app";
+// Fix: Using namespace import for firebase/app to ensure initialization functions are correctly resolved
+import * as firebaseApp from "firebase/app";
 import { getFirestore, collection } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -12,13 +12,26 @@ const firebaseConfig = {
   measurementId: "G-14FBFP0Z76"
 };
 
+/**
+ * Checks if the Firebase configuration is present and valid.
+ */
 export const isFirebaseConfigured = () => {
   return firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith("AIza");
 };
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+/**
+ * Initialize the Firebase application instance.
+ * Uses namespace access to initializeApp, getApp, and getApps to avoid named export resolution errors.
+ */
+const app = firebaseApp.getApps().length === 0 
+  ? firebaseApp.initializeApp(firebaseConfig) 
+  : firebaseApp.getApp();
+
 export const db = getFirestore(app);
 
+/**
+ * Global Firestore collection references for clinical data entities.
+ */
 export const clinicalCollections = {
   tenants: collection(db, "tenants"),
   users: collection(db, "users"),
