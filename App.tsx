@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { onSnapshot, doc, setDoc, updateDoc, query, where, getDocs, addDoc, deleteDoc } from "firebase/firestore";
+import { onSnapshot, doc, setDoc, updateDoc, query, where, getDocs, addDoc, limit } from "firebase/firestore";
 import { db, clinicalCollections } from './firebase';
-import { UserRole, User, Patient, Appointment, MedicalRecord, Bill, ApptStatus, Prescription, Tenant, SubscriptionPlan } from './types';
+import { UserRole, User, Patient, Appointment, MedicalRecord, Bill, ApptStatus, Prescription, SubscriptionPlan } from './types';
 import { ICONS } from './constants';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
@@ -13,7 +13,6 @@ import BillingPage from './pages/BillingPage';
 import StaffManagement from './pages/StaffManagement';
 import SettingsPage from './pages/SettingsPage';
 import PharmacyPage from './pages/PharmacyPage';
-import { MOCK_USERS } from './services/mockData';
 
 // --- LANDING PAGE ---
 const LandingPage: React.FC<{ onGetStarted: (mode: 'signin' | 'signup', plan?: SubscriptionPlan) => void }> = ({ onGetStarted }) => {
@@ -66,31 +65,63 @@ const LandingPage: React.FC<{ onGetStarted: (mode: 'signin' | 'signup', plan?: S
 const AuthPage: React.FC<{ mode: 'signin' | 'signup', plan?: SubscriptionPlan, onAuth: (u: User, clinicName?: string) => void, onBack: () => void, onToggle: () => void }> = ({ mode, plan, onAuth, onBack, onToggle }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', password: '', clinicName: '' });
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     
-    // Simulate API Delay
-    setTimeout(() => {
+    try {
       if (mode === 'signup') {
+        // Registration Flow
         const newTenantId = `HF-T${Math.floor(1000 + Math.random() * 9000)}`;
+        const userId = `USR-${Date.now()}`;
+        
         const newUser: User = {
-          id: `USR-${Date.now()}`,
+          id: userId,
           tenantId: newTenantId,
           name: formData.name,
           email: formData.email,
+          password: formData.password, // In real apps, hash this. Using plain text for this module's DB auth as requested.
           role: UserRole.ADMIN,
           avatar: `https://picsum.photos/seed/${formData.name}/100/100`,
         };
+
+        // Initialize tenant and primary admin
+        await setDoc(doc(clinicalCollections.tenants, newTenantId), {
+          id: newTenantId,
+          name: formData.clinicName,
+          createdAt: new Date().toISOString()
+        });
+        
+        await setDoc(doc(clinicalCollections.users, userId), newUser);
+        await setDoc(doc(clinicalCollections.staff, userId), { ...newUser, specialization: 'Clinic Director' });
+
         onAuth(newUser, formData.clinicName);
       } else {
-        const matched = MOCK_USERS.find(u => u.email === formData.email);
-        const user = matched || MOCK_USERS[0];
-        onAuth(user, "HealFlow Center");
+        // Login Flow - Query Firestore for matching credentials
+        const q = query(clinicalCollections.users, where("email", "==", formData.email), where("password", "==", formData.password), limit(1));
+        const snap = await getDocs(q);
+        
+        if (snap.empty) {
+          setError("Invalid security credentials. Check your registry key and password.");
+        } else {
+          const userData = { ...snap.docs[0].data(), id: snap.docs[0].id } as User;
+          
+          // Fetch clinic name
+          const tenantSnap = await getDocs(query(clinicalCollections.tenants, where("id", "==", userData.tenantId), limit(1)));
+          const cName = !tenantSnap.empty ? tenantSnap.docs[0].data().name : "HEALFLOW CENTER";
+          
+          onAuth(userData, cName);
+        }
       }
+    } catch (err: any) {
+      console.error("Auth Error:", err);
+      setError("System handshake failure. Please retry or contact support.");
+    } finally {
       setLoading(false);
-    }, 1200);
+    }
   };
 
   return (
@@ -117,6 +148,12 @@ const AuthPage: React.FC<{ mode: 'signin' | 'signup', plan?: SubscriptionPlan, o
             </p>
           </div>
 
+          {error && (
+            <div className="mb-8 p-4 bg-red-50 border-l-4 border-red-500 text-red-600 text-[10px] font-bold uppercase tracking-widest animate-in slide-in-from-top-2">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-8">
             {mode === 'signup' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-bottom-4">
@@ -142,7 +179,7 @@ const AuthPage: React.FC<{ mode: 'signin' | 'signup', plan?: SubscriptionPlan, o
             </div>
             
             <button type="submit" disabled={loading} className="w-full py-7 bg-primary text-white rounded-3xl font-heading text-2xl uppercase tracking-widest hover:bg-slate-800 transition-all shadow-2xl active:scale-95 mt-6 flex items-center justify-center gap-4">
-              {loading ? 'Initializing Stack...' : (mode === 'signup' ? 'Deploy Terminal' : 'Authenticate')}
+              {loading ? 'Processing Protocol...' : (mode === 'signup' ? 'Deploy Terminal' : 'Authenticate')}
             </button>
           </form>
 
@@ -167,7 +204,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Clinical Data State (Scoped to Tenant)
+  // Clinical Data State (Sanitized POJOs)
   const [patients, setPatients] = useState<Patient[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [bills, setBills] = useState<Bill[]>([]);
@@ -185,25 +222,40 @@ const App: React.FC = () => {
       const qRx = query(clinicalCollections.prescriptions, where("tenantId", "==", tid));
       const qRec = query(clinicalCollections.records, where("tenantId", "==", tid));
 
+      const sanitize = (docs: any[]) => docs.map(d => ({ ...d.data(), id: d.id }));
+
       const unsubs = [
-        onSnapshot(qP, s => setPatients(s.docs.map(d => ({ ...d.data(), id: d.id } as Patient)))),
-        onSnapshot(qA, s => setAppointments(s.docs.map(d => ({ ...d.data(), id: d.id } as Appointment)))),
-        onSnapshot(qB, s => setBills(s.docs.map(d => ({ ...d.data(), id: d.id } as Bill)))),
-        onSnapshot(qS, s => setStaff(s.docs.map(d => ({ ...d.data(), id: d.id } as User)))),
-        onSnapshot(qRx, s => setPrescriptions(s.docs.map(d => ({ ...d.data(), id: d.id } as Prescription)))),
-        onSnapshot(qRec, s => setRecords(s.docs.map(d => ({ ...d.data(), id: d.id } as MedicalRecord))))
+        onSnapshot(qP, s => setPatients(sanitize(s.docs) as Patient[])),
+        onSnapshot(qA, s => setAppointments(sanitize(s.docs) as Appointment[])),
+        onSnapshot(qB, s => setBills(sanitize(s.docs) as Bill[])),
+        onSnapshot(qS, s => setStaff(sanitize(s.docs) as User[])),
+        onSnapshot(qRx, s => setPrescriptions(sanitize(s.docs) as Prescription[])),
+        onSnapshot(qRec, s => setRecords(sanitize(s.docs) as MedicalRecord[]))
       ];
 
       return () => unsubs.forEach(u => u());
     }
   }, [currentUser]);
 
-  // Scoped Persistence Logic
-  const addPatient = async (p: Patient) => await setDoc(doc(clinicalCollections.patients, p.id), { ...p, tenantId: currentUser?.tenantId });
-  const updatePatient = async (p: Patient) => await updateDoc(doc(clinicalCollections.patients, p.id), p as any);
+  // Scoped Persistence
+  const addPatient = async (p: Patient) => {
+    const cleanPatient = { ...p, tenantId: currentUser?.tenantId };
+    await setDoc(doc(clinicalCollections.patients, p.id), cleanPatient);
+  };
+
+  const updatePatient = async (p: Patient) => {
+    const { id, ...data } = p;
+    await updateDoc(doc(clinicalCollections.patients, id), data as any);
+  };
   
-  const addAppointment = async (a: Appointment) => await setDoc(doc(clinicalCollections.appointments, a.id), { ...a, tenantId: currentUser?.tenantId });
-  const updateAppointmentStatus = async (id: string, s: ApptStatus, extra?: any) => await updateDoc(doc(clinicalCollections.appointments, id), { status: s, ...extra });
+  const addAppointment = async (a: Appointment) => {
+    const cleanAppt = { ...a, tenantId: currentUser?.tenantId };
+    await setDoc(doc(clinicalCollections.appointments, a.id), cleanAppt);
+  };
+
+  const updateAppointmentStatus = async (id: string, s: ApptStatus, extra?: any) => {
+    await updateDoc(doc(clinicalCollections.appointments, id), { status: s, ...extra });
+  };
   
   const finalizeConsultation = async (rec: MedicalRecord, px: Prescription) => {
     await addDoc(clinicalCollections.records, { ...rec, tenantId: currentUser?.tenantId });
@@ -211,17 +263,21 @@ const App: React.FC = () => {
     await updateAppointmentStatus(rec.appointmentId, 'Completed');
   };
 
-  const addBill = async (b: Bill) => await addDoc(clinicalCollections.bills, { ...b, tenantId: currentUser?.tenantId });
+  const addBill = async (b: Bill) => {
+    await addDoc(clinicalCollections.bills, { ...b, tenantId: currentUser?.tenantId });
+  };
   
   const addStaff = async (u: User) => {
-    // Crucial: The new staff member MUST inherit the current Admin's tenantId
-    const staffRef = doc(clinicalCollections.staff, u.id);
-    await setDoc(staffRef, { ...u, tenantId: currentUser?.tenantId });
+    const cleanUser = { ...u, tenantId: currentUser?.tenantId };
+    // Add to staff collection (display) and users collection (authentication)
+    await setDoc(doc(clinicalCollections.staff, u.id), cleanUser);
+    await setDoc(doc(clinicalCollections.users, u.id), cleanUser);
   };
 
   const updateStaff = async (u: User) => {
-    const staffRef = doc(clinicalCollections.staff, u.id);
-    await updateDoc(staffRef, u as any);
+    const { id, ...data } = u;
+    await updateDoc(doc(clinicalCollections.staff, id), data as any);
+    await updateDoc(doc(clinicalCollections.users, id), data as any);
   };
 
   const onDispense = async (pxId: string) => {
@@ -235,16 +291,6 @@ const App: React.FC = () => {
   const handleAuth = async (user: User, facilityName?: string) => {
     setCurrentUser(user);
     if (facilityName) setClinicName(facilityName.toUpperCase());
-    
-    // If Admin signup, initialize the staff record for themselves
-    if (authMode === 'signup') {
-      await setDoc(doc(clinicalCollections.staff, user.id), {
-        ...user,
-        role: UserRole.ADMIN,
-        specialization: "Clinic Director"
-      });
-    }
-
     setView('app');
     setActiveTab('dashboard');
   };
