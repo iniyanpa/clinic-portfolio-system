@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { onSnapshot, doc, setDoc, updateDoc, query, where, getDocs, addDoc } from "firebase/firestore";
+import { onSnapshot, doc, setDoc, updateDoc, query, where, getDocs, addDoc, deleteDoc } from "firebase/firestore";
 import { db, clinicalCollections } from './firebase';
 import { UserRole, User, Patient, Appointment, MedicalRecord, Bill, ApptStatus, Prescription, Tenant, SubscriptionPlan } from './types';
 import { ICONS } from './constants';
@@ -17,11 +17,6 @@ import { MOCK_USERS } from './services/mockData';
 
 // --- LANDING PAGE ---
 const LandingPage: React.FC<{ onGetStarted: (mode: 'signin' | 'signup', plan?: SubscriptionPlan) => void }> = ({ onGetStarted }) => {
-  const scrollToPricing = () => {
-    const el = document.getElementById('pricing');
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
-  };
-
   return (
     <div className="min-h-screen bg-white font-body overflow-x-hidden animate-in fade-in duration-700">
       <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-2xl border-b border-slate-100">
@@ -68,19 +63,34 @@ const LandingPage: React.FC<{ onGetStarted: (mode: 'signin' | 'signup', plan?: S
 };
 
 // --- AUTH PAGE ---
-const AuthPage: React.FC<{ mode: 'signin' | 'signup', plan?: SubscriptionPlan, onAuth: (u: User) => void, onBack: () => void, onToggle: () => void }> = ({ mode, plan, onAuth, onBack, onToggle }) => {
+const AuthPage: React.FC<{ mode: 'signin' | 'signup', plan?: SubscriptionPlan, onAuth: (u: User, clinicName?: string) => void, onBack: () => void, onToggle: () => void }> = ({ mode, plan, onAuth, onBack, onToggle }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', password: '', clinicName: '' });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulation: Use mock data or create new
+    
+    // Simulate API Delay
     setTimeout(() => {
-      const mockUser = MOCK_USERS.find(u => u.email === formData.email) || MOCK_USERS[0];
-      onAuth({ ...mockUser, name: formData.name || mockUser.name });
+      if (mode === 'signup') {
+        const newTenantId = `HF-T${Math.floor(1000 + Math.random() * 9000)}`;
+        const newUser: User = {
+          id: `USR-${Date.now()}`,
+          tenantId: newTenantId,
+          name: formData.name,
+          email: formData.email,
+          role: UserRole.ADMIN,
+          avatar: `https://picsum.photos/seed/${formData.name}/100/100`,
+        };
+        onAuth(newUser, formData.clinicName);
+      } else {
+        const matched = MOCK_USERS.find(u => u.email === formData.email);
+        const user = matched || MOCK_USERS[0];
+        onAuth(user, "HealFlow Center");
+      }
       setLoading(false);
-    }, 800);
+    }, 1200);
   };
 
   return (
@@ -132,7 +142,7 @@ const AuthPage: React.FC<{ mode: 'signin' | 'signup', plan?: SubscriptionPlan, o
             </div>
             
             <button type="submit" disabled={loading} className="w-full py-7 bg-primary text-white rounded-3xl font-heading text-2xl uppercase tracking-widest hover:bg-slate-800 transition-all shadow-2xl active:scale-95 mt-6 flex items-center justify-center gap-4">
-              {loading ? 'Initializing...' : (mode === 'signup' ? 'Deploy Terminal' : 'Authenticate')}
+              {loading ? 'Initializing Stack...' : (mode === 'signup' ? 'Deploy Terminal' : 'Authenticate')}
             </button>
           </form>
 
@@ -150,13 +160,14 @@ const AuthPage: React.FC<{ mode: 'signin' | 'signup', plan?: SubscriptionPlan, o
 // --- MAIN APP COMPONENT ---
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [clinicName, setClinicName] = useState("HEALFLOW CENTER");
   const [view, setView] = useState<'landing' | 'auth' | 'app'>('landing');
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [signupPlan, setSignupPlan] = useState<SubscriptionPlan | undefined>();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Clinical Data State
+  // Clinical Data State (Scoped to Tenant)
   const [patients, setPatients] = useState<Patient[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [bills, setBills] = useState<Bill[]>([]);
@@ -166,12 +177,13 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (currentUser && currentUser.tenantId) {
-      const qP = query(clinicalCollections.patients, where("tenantId", "==", currentUser.tenantId));
-      const qA = query(clinicalCollections.appointments, where("tenantId", "==", currentUser.tenantId));
-      const qB = query(clinicalCollections.bills, where("tenantId", "==", currentUser.tenantId));
-      const qS = query(clinicalCollections.staff, where("tenantId", "==", currentUser.tenantId));
-      const qRx = query(clinicalCollections.prescriptions, where("tenantId", "==", currentUser.tenantId));
-      const qRec = query(clinicalCollections.records, where("tenantId", "==", currentUser.tenantId));
+      const tid = currentUser.tenantId;
+      const qP = query(clinicalCollections.patients, where("tenantId", "==", tid));
+      const qA = query(clinicalCollections.appointments, where("tenantId", "==", tid));
+      const qB = query(clinicalCollections.bills, where("tenantId", "==", tid));
+      const qS = query(clinicalCollections.staff, where("tenantId", "==", tid));
+      const qRx = query(clinicalCollections.prescriptions, where("tenantId", "==", tid));
+      const qRec = query(clinicalCollections.records, where("tenantId", "==", tid));
 
       const unsubs = [
         onSnapshot(qP, s => setPatients(s.docs.map(d => ({ ...d.data(), id: d.id } as Patient)))),
@@ -186,25 +198,53 @@ const App: React.FC = () => {
     }
   }, [currentUser]);
 
-  const addPatient = async (p: Patient) => await setDoc(doc(clinicalCollections.patients, p.id), p);
+  // Scoped Persistence Logic
+  const addPatient = async (p: Patient) => await setDoc(doc(clinicalCollections.patients, p.id), { ...p, tenantId: currentUser?.tenantId });
   const updatePatient = async (p: Patient) => await updateDoc(doc(clinicalCollections.patients, p.id), p as any);
+  
   const addAppointment = async (a: Appointment) => await setDoc(doc(clinicalCollections.appointments, a.id), { ...a, tenantId: currentUser?.tenantId });
   const updateAppointmentStatus = async (id: string, s: ApptStatus, extra?: any) => await updateDoc(doc(clinicalCollections.appointments, id), { status: s, ...extra });
+  
   const finalizeConsultation = async (rec: MedicalRecord, px: Prescription) => {
     await addDoc(clinicalCollections.records, { ...rec, tenantId: currentUser?.tenantId });
     await addDoc(clinicalCollections.prescriptions, { ...px, tenantId: currentUser?.tenantId });
     await updateAppointmentStatus(rec.appointmentId, 'Completed');
   };
+
   const addBill = async (b: Bill) => await addDoc(clinicalCollections.bills, { ...b, tenantId: currentUser?.tenantId });
-  const addStaff = async (u: User) => await addDoc(clinicalCollections.staff, { ...u, tenantId: currentUser?.tenantId });
-  const updateStaff = async (u: User) => {
-    const q = query(clinicalCollections.staff, where("id", "==", u.id));
-    const snap = await getDocs(q);
-    if (!snap.empty) await updateDoc(doc(db, "staff", snap.docs[0].id), u as any);
+  
+  const addStaff = async (u: User) => {
+    // Crucial: The new staff member MUST inherit the current Admin's tenantId
+    const staffRef = doc(clinicalCollections.staff, u.id);
+    await setDoc(staffRef, { ...u, tenantId: currentUser?.tenantId });
   };
 
-  const handleAuth = (user: User) => {
+  const updateStaff = async (u: User) => {
+    const staffRef = doc(clinicalCollections.staff, u.id);
+    await updateDoc(staffRef, u as any);
+  };
+
+  const onDispense = async (pxId: string) => {
+    const q = query(clinicalCollections.prescriptions, where("id", "==", pxId));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      await updateDoc(doc(db, "prescriptions", snap.docs[0].id), { status: 'Dispensed' });
+    }
+  };
+
+  const handleAuth = async (user: User, facilityName?: string) => {
     setCurrentUser(user);
+    if (facilityName) setClinicName(facilityName.toUpperCase());
+    
+    // If Admin signup, initialize the staff record for themselves
+    if (authMode === 'signup') {
+      await setDoc(doc(clinicalCollections.staff, user.id), {
+        ...user,
+        role: UserRole.ADMIN,
+        specialization: "Clinic Director"
+      });
+    }
+
     setView('app');
     setActiveTab('dashboard');
   };
@@ -216,7 +256,7 @@ const App: React.FC = () => {
     <div className="flex min-h-screen bg-slate-50 font-body text-slate-800">
       <Sidebar 
         user={currentUser!} 
-        tenantName="HEALFLOW CENTER" 
+        tenantName={clinicName} 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
         onLogout={() => { setCurrentUser(null); setView('landing'); }} 
@@ -231,12 +271,12 @@ const App: React.FC = () => {
 
         <div className="p-6 md:p-12 flex-1 max-w-7xl mx-auto w-full">
           {activeTab === 'dashboard' && <Dashboard patients={patients} appointments={appointments} bills={bills} logs={[]} setActiveTab={setActiveTab} />}
-          {activeTab === 'patients' && <Patients patients={patients} tenantId={currentUser!.tenantId} clinicName="HEALFLOW CENTER" addPatient={addPatient} updatePatient={updatePatient} />}
+          {activeTab === 'patients' && <Patients patients={patients} tenantId={currentUser!.tenantId} clinicName={clinicName} addPatient={addPatient} updatePatient={updatePatient} />}
           {activeTab === 'appointments' && <AppointmentsPage patients={patients} staff={staff} appointments={appointments} addAppointment={addAppointment} updateAppointmentStatus={updateAppointmentStatus} />}
-          {activeTab === 'records' && <ConsultationRoom patients={patients} appointments={appointments} clinicName="HEALFLOW CENTER" finalizeConsultation={finalizeConsultation} />}
-          {activeTab === 'billing' && <BillingPage patients={patients} appointments={appointments} records={records} prescriptions={prescriptions} bills={bills} clinicName="HEALFLOW CENTER" addBill={addBill} />}
+          {activeTab === 'records' && <ConsultationRoom patients={patients} appointments={appointments} clinicName={clinicName} finalizeConsultation={finalizeConsultation} />}
+          {activeTab === 'billing' && <BillingPage patients={patients} appointments={appointments} records={records} prescriptions={prescriptions} bills={bills} clinicName={clinicName} addBill={addBill} />}
           {activeTab === 'staff' && <StaffManagement staff={staff} addStaff={addStaff} updateStaff={updateStaff} />}
-          {activeTab === 'pharmacy' && <PharmacyPage prescriptions={prescriptions} patients={patients} clinicName="HEALFLOW CENTER" onDispense={() => {}} />}
+          {activeTab === 'pharmacy' && <PharmacyPage prescriptions={prescriptions} patients={patients} clinicName={clinicName} onDispense={onDispense} />}
           {activeTab === 'settings' && <SettingsPage />}
         </div>
       </main>
