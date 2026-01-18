@@ -38,7 +38,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
   const filteredAndSortedAppts = useMemo(() => {
     return appointments
       .filter(a => a.date === selectedDate)
-      .sort((a, b) => a.time.localeCompare(b.time));
+      .sort((a, b) => b.time.localeCompare(a.time));
   }, [appointments, selectedDate]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

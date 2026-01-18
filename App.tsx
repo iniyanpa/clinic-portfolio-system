@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { onSnapshot, doc, setDoc, updateDoc, query, where, getDocs, addDoc, limit } from "firebase/firestore";
 import { db, clinicalCollections } from './firebase';
 import { UserRole, User, Patient, Appointment, MedicalRecord, Bill, ApptStatus, Prescription, SubscriptionPlan, Tenant } from './types';
-import { ICONS } from '../constants';
+import { ICONS } from './constants';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Patients from './pages/Patients';
