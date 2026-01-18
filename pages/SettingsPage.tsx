@@ -11,7 +11,7 @@ interface SettingsPageProps {
 
 const SettingsPage: React.FC<SettingsPageProps> = ({ tenantId, currentSettings }) => {
   const [fees, setFees] = useState({ consultation: 500, platform: 200 });
-  const [clinicInfo, setClinicInfo] = useState({ address: '', phone: '', email: '', logoUrl: '' });
+  const [clinicInfo, setClinicInfo] = useState({ address: '', phone: '', email: '', logoUrl: '', logoBase64: '' });
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -24,10 +24,25 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ tenantId, currentSettings }
         address: currentSettings.address || '',
         phone: currentSettings.phone || '',
         email: currentSettings.email || '',
-        logoUrl: currentSettings.logoUrl || ''
+        logoUrl: currentSettings.logoUrl || '',
+        logoBase64: currentSettings.logoBase64 || ''
       });
     }
   }, [currentSettings]);
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setClinicInfo({
+          ...clinicInfo,
+          logoBase64: reader.result as string
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const saveSettings = async () => {
     if (!tenantId) return;
@@ -39,7 +54,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ tenantId, currentSettings }
         address: clinicInfo.address,
         phone: clinicInfo.phone,
         email: clinicInfo.email,
-        logoUrl: clinicInfo.logoUrl
+        logoUrl: clinicInfo.logoUrl,
+        logoBase64: clinicInfo.logoBase64
       });
       alert("Clinic profile and configuration synced.");
     } catch (e) {
@@ -61,15 +77,36 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ tenantId, currentSettings }
         <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 space-y-6">
            <h3 className="font-heading text-lg text-slate-700 uppercase tracking-widest border-b pb-3">Branding & Letterhead</h3>
            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase ml-2">Clinic Logo Attachment</label>
+                <div className="flex items-center gap-4">
+                  {clinicInfo.logoBase64 ? (
+                    <img src={clinicInfo.logoBase64} alt="Logo Preview" className="w-16 h-16 rounded-xl object-cover border border-slate-200" />
+                  ) : (
+                    <div className="w-16 h-16 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center text-slate-300">
+                      {ICONS.Home}
+                    </div>
+                  )}
+                  <input 
+                    type="file"
+                    accept="image/*"
+                    className="flex-1 bg-slate-50 border border-slate-200 outline-none font-bold text-[10px] p-2 rounded-xl"
+                    onChange={handleLogoUpload}
+                  />
+                </div>
+                <p className="text-[8px] text-slate-400 ml-2">Restrict to JPG, PNG, WEBP formats.</p>
+              </div>
+
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-2">Clinic Logo URL</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase ml-2">Clinic Logo URL (Optional)</label>
                 <input 
                   className="w-full bg-slate-50 border border-slate-200 outline-none font-bold text-xs" 
                   value={clinicInfo.logoUrl} 
                   onChange={e => setClinicInfo({...clinicInfo, logoUrl: e.target.value})}
-                  placeholder="Link to hosted logo image..."
+                  placeholder="Alternatively, provide a link..."
                 />
               </div>
+
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-400 uppercase ml-2">Clinic Physical Address</label>
                 <textarea 

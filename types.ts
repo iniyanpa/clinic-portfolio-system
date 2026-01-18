@@ -25,6 +25,7 @@ export interface Tenant {
   phone?: string;
   email?: string;
   logoUrl?: string;
+  logoBase64?: string;
 }
 
 export interface User {
@@ -79,6 +80,8 @@ export interface Appointment {
   cancellationReason?: string;
   vitals?: Vitals;
   initialSymptoms?: string;
+  labRecordBase64?: string;
+  labRecordName?: string;
 }
 
 export interface MedicalRecord {

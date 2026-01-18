@@ -136,6 +136,17 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
                </div>
              ))}
            </div>
+           
+           {currentAppt.labRecordBase64 && (
+              <div className="bg-blue-50 p-8 rounded-[2rem] border border-blue-100">
+                <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-3">Attached Lab Record</p>
+                <a href={currentAppt.labRecordBase64} download={currentAppt.labRecordName || 'lab_record.pdf'} className="flex items-center gap-3 bg-white p-4 rounded-xl border border-blue-100 hover:bg-blue-100 transition-colors">
+                  <div className="text-primary">{ICONS.Download}</div>
+                  <span className="text-[10px] font-bold text-slate-700 truncate">{currentAppt.labRecordName || 'Download Record'}</span>
+                </a>
+              </div>
+           )}
+
            <div className="bg-orange-50 p-8 rounded-[2rem] border border-orange-100">
               <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-3">Chief Complaint</p>
               <p className="font-bold text-slate-700 leading-relaxed italic">"{currentAppt.initialSymptoms || 'No primary symptoms noted.'}"</p>

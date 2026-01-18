@@ -26,7 +26,9 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
     patientId: '', doctorId: '',
     date: new Date().toISOString().split('T')[0], 
     time: getCurrentTime(), 
-    reason: '', department: 'General Medicine' 
+    reason: '', department: 'General Medicine',
+    labRecordBase64: '',
+    labRecordName: ''
   });
 
   const doctors = staff.filter(u => u.role === 'Doctor');
@@ -37,6 +39,21 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
       .sort((a, b) => a.time.localeCompare(b.time));
   }, [appointments, selectedDate]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewAppt({
+          ...newAppt,
+          labRecordBase64: reader.result as string,
+          labRecordName: file.name
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleBooking = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAppt.patientId || !newAppt.doctorId) return;
@@ -46,10 +63,12 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
       doctorId: newAppt.doctorId, date: newAppt.date,
       time: newAppt.time || getCurrentTime(), 
       status: 'Scheduled',
-      reason: newAppt.reason, department: newAppt.department
+      reason: newAppt.reason, department: newAppt.department,
+      labRecordBase64: newAppt.labRecordBase64,
+      labRecordName: newAppt.labRecordName
     });
     setShowModal(false);
-    setNewAppt({ patientId: '', doctorId: '', date: new Date().toISOString().split('T')[0], time: getCurrentTime(), reason: '', department: 'General Medicine' });
+    setNewAppt({ patientId: '', doctorId: '', date: new Date().toISOString().split('T')[0], time: getCurrentTime(), reason: '', department: 'General Medicine', labRecordBase64: '', labRecordName: '' });
   };
 
   const handleCheckIn = () => {
@@ -177,6 +196,11 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-slate-400 uppercase ml-2">Reason for OPD</label>
                 <input required className="w-full bg-slate-50 p-3 rounded-xl border border-slate-100 outline-none font-bold text-sm shadow-inner" placeholder="Complaint summary..." value={newAppt.reason} onChange={e => setNewAppt({...newAppt, reason: e.target.value})} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-slate-400 uppercase ml-2">Attach Lab Record (Optional)</label>
+                <input type="file" className="w-full bg-slate-50 p-2 rounded-xl border border-slate-100 outline-none font-bold text-[10px] shadow-inner" onChange={handleFileChange} />
+                {newAppt.labRecordName && <p className="text-[8px] text-primary mt-1 truncate">Attached: {newAppt.labRecordName}</p>}
               </div>
               <div className="flex gap-4 pt-4">
                 <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-3 text-slate-400 font-bold uppercase tracking-widest text-[9px]">Discard</button>

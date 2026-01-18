@@ -89,7 +89,7 @@ const Patients: React.FC<PatientsProps> = ({ patients, tenantId, clinicName, add
   };
 
   const filtered = useMemo(() => {
-    // Sort descending by ID or Registered Date
+    // Sort descending by numeric portion of ID or registration date
     const sortedPatients = [...patients].sort((a, b) => b.id.localeCompare(a.id));
     
     return sortedPatients.filter(p => {
@@ -114,16 +114,16 @@ const Patients: React.FC<PatientsProps> = ({ patients, tenantId, clinicName, add
       <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-6 bg-slate-50 border-b border-slate-200 flex justify-center">
           <div className="relative w-full max-w-2xl">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300">
-              {ICONS.Search}
-            </div>
             <input
               type="text"
-              className="block w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:ring-4 ring-primary/5 font-bold text-sm shadow-inner"
+              className="block w-full pr-10 pl-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:ring-4 ring-primary/5 font-bold text-sm shadow-inner"
               placeholder="Search by Patient Name or Mobile Number..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-300">
+              {ICONS.Search}
+            </div>
           </div>
         </div>
 

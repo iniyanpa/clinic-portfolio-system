@@ -270,12 +270,14 @@ const App: React.FC = () => {
   if (view === 'landing') return <LandingPage onGetStarted={(m, p) => { setAuthMode(m); setSignupPlan(p); setView('auth'); }} />;
   if (view === 'auth') return <AuthPage mode={authMode} plan={signupPlan} onAuth={handleAuth} onBack={() => setView('landing')} onToggle={() => setAuthMode(authMode === 'signin' ? 'signup' : 'signin')} />;
 
+  const tenantLogo = tenantSettings?.logoBase64 || tenantSettings?.logoUrl;
+
   return (
     <div className="flex min-h-screen bg-slate-50 font-body text-slate-800">
       <Sidebar 
         user={currentUser!} 
         tenantName={clinicName} 
-        tenantLogo={tenantSettings?.logoUrl}
+        tenantLogo={tenantLogo}
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
         onLogout={handleLogout} 
@@ -286,8 +288,8 @@ const App: React.FC = () => {
         <header className="bg-white border-b border-slate-200 sticky top-0 z-30 px-6 py-4 flex items-center justify-between shadow-sm lg:hidden">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
             <button onClick={(e) => { e.stopPropagation(); setIsSidebarOpen(true); }} className="p-2 btn-primary rounded-lg mr-2">{ICONS.Menu}</button>
-            {tenantSettings?.logoUrl ? (
-              <img src={tenantSettings.logoUrl} alt="Logo" className="w-8 h-8 rounded-lg object-cover" />
+            {tenantLogo ? (
+              <img src={tenantLogo} alt="Logo" className="w-8 h-8 rounded-lg object-cover" />
             ) : (
               <div className="text-primary">{ICONS.Home}</div>
             )}
