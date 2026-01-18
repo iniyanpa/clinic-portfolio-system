@@ -27,20 +27,28 @@
     }
   </script>
   <style>
-    body { font-family: 'IBM Plex Sans', sans-serif; background-color: #f8fafc; color: #1e293b; }
-    h1, h2, h3, h4, .font-heading { font-family: 'Oswald', sans-serif; }
+    body { font-family: 'IBM Plex Sans', sans-serif; background-color: #f8fafc; color: #1e293b; font-size: 14px; }
+    h1, h2, h3, h4, .font-heading { font-family: 'Oswald', sans-serif; font-weight: 700; }
     .subheading { font-family: 'Cinzel', serif; }
     
-    /* Global Input Font Overrides: 1 size up (text-lg) and Bold (700) */
-    input, select, textarea, button { 
-      font-weight: 700 !important; 
-      font-size: 1.125rem !important; 
+    /* Reduced Font Size for Inputs and Selects (1rem / 16px base) */
+    input, select, textarea { 
+      font-weight: 600 !important; 
+      font-size: 1rem !important; 
       color: #0f172a !important;
+      padding: 0.75rem 1rem !important;
+      border-radius: 1rem !important;
     }
     
-    input, select, textarea {
-      padding: 0.875rem 1rem !important;
+    /* Enforce High Contrast on Primary/Secondary Buttons */
+    button {
+      font-weight: 700 !important;
+      font-size: 0.875rem !important;
+      transition: all 0.2s ease;
     }
+    
+    .btn-primary { background-color: #29378c !important; color: #ffffff !important; }
+    .btn-secondary { background-color: #29baed !important; color: #ffffff !important; }
 
     input::placeholder, textarea::placeholder {
       font-weight: 500 !important;

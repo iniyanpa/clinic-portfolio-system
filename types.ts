@@ -1,4 +1,3 @@
-
 export enum UserRole {
   ADMIN = 'Admin',
   DOCTOR = 'Doctor',
@@ -16,10 +15,12 @@ export interface Tenant {
   id: string;
   name: string;
   createdAt: string;
-  ownerId: string;
-  plan: SubscriptionPlan;
-  status: TenantStatus;
-  expiryDate: string;
+  ownerId?: string;
+  plan?: SubscriptionPlan;
+  status?: TenantStatus;
+  expiryDate?: string;
+  consultationFee?: number;
+  platformFee?: number;
 }
 
 export interface User {

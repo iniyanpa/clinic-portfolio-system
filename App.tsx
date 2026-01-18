@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { onSnapshot, doc, setDoc, updateDoc, query, where, getDocs, addDoc, limit } from "firebase/firestore";
 import { db, clinicalCollections } from './firebase';
-import { UserRole, User, Patient, Appointment, MedicalRecord, Bill, ApptStatus, Prescription, SubscriptionPlan } from './types';
+import { UserRole, User, Patient, Appointment, MedicalRecord, Bill, ApptStatus, Prescription, SubscriptionPlan, Tenant } from './types';
 import { ICONS } from './constants';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
@@ -73,17 +73,17 @@ const LandingPage: React.FC<{ onGetStarted: (mode: 'signin' | 'signup', plan?: S
             <p className="text-slate-500 text-lg">Detailed features built for Indian healthcare professionals.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-10 bg-slate-50 rounded-[3rem] space-y-6 hover:shadow-xl transition-all">
+            <div className="p-10 bg-slate-50 rounded-[3rem] space-y-6 hover:shadow-xl transition-all border border-slate-100">
               <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center">{ICONS.Records}</div>
               <h4 className="text-2xl font-bold text-primary">Paperless EMR</h4>
               <p className="text-slate-600 leading-relaxed">Capture full patient history, vitals, and chronic issues. Access any file from anywhere instantly.</p>
             </div>
-            <div className="p-10 bg-slate-50 rounded-[3rem] space-y-6 hover:shadow-xl transition-all">
+            <div className="p-10 bg-slate-50 rounded-[3rem] space-y-6 hover:shadow-xl transition-all border border-slate-100">
               <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center">{ICONS.Billing}</div>
               <h4 className="text-2xl font-bold text-primary">Billing & GST</h4>
               <p className="text-slate-600 leading-relaxed">Fast billing with UPI QR integration. Generate tax-compliant PDF invoices for every visit.</p>
             </div>
-            <div className="p-10 bg-slate-50 rounded-[3rem] space-y-6 hover:shadow-xl transition-all">
+            <div className="p-10 bg-slate-50 rounded-[3rem] space-y-6 hover:shadow-xl transition-all border border-slate-100">
               <div className="w-16 h-16 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center">{ICONS.Staff}</div>
               <h4 className="text-2xl font-bold text-primary">Direct Pharmacy</h4>
               <p className="text-slate-600 leading-relaxed">Prescriptions go straight to your in-clinic pharmacy, ensuring accurate medicine dispensing.</p>
@@ -134,7 +134,9 @@ const AuthPage: React.FC<{ mode: 'signin' | 'signup', plan?: SubscriptionPlan, o
           name: formData.clinicName,
           createdAt: new Date().toISOString(),
           status: 'Active',
-          plan: plan || 'Trial'
+          plan: plan || 'Trial',
+          consultationFee: 500,
+          platformFee: 200
         });
         await setDoc(doc(clinicalCollections.users, userId), newUser);
         await setDoc(doc(clinicalCollections.staff, userId), { ...newUser, specialization: 'Clinic Owner' });
@@ -187,7 +189,7 @@ const AuthPage: React.FC<{ mode: 'signin' | 'signup', plan?: SubscriptionPlan, o
             </button>
           </div>
         </div>
-        <button onClick={onBack} className="w-full text-slate-400 font-bold uppercase tracking-widest text-xs">← Back to Homepage</button>
+        <button onClick={onBack} className="w-full text-slate-400 font-bold uppercase tracking-widest text-xs hover:text-primary transition-all">← Back to Homepage</button>
       </div>
     </div>
   );
@@ -205,6 +207,7 @@ const App: React.FC = () => {
   const [signupPlan, setSignupPlan] = useState<SubscriptionPlan | undefined>();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [tenantSettings, setTenantSettings] = useState<Tenant | null>(null);
 
   const [patients, setPatients] = useState<Patient[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -218,6 +221,7 @@ const App: React.FC = () => {
       const tid = currentUser.tenantId;
       const sanitize = (docs: any[]) => docs.map(d => ({ ...d.data(), id: d.id }));
       const unsubs = [
+        onSnapshot(doc(clinicalCollections.tenants, tid), (s) => setTenantSettings(s.data() as Tenant)),
         onSnapshot(query(clinicalCollections.patients, where("tenantId", "==", tid)), (s: any) => setPatients(sanitize(s.docs) as Patient[])),
         onSnapshot(query(clinicalCollections.appointments, where("tenantId", "==", tid)), (s: any) => setAppointments(sanitize(s.docs) as Appointment[])),
         onSnapshot(query(clinicalCollections.bills, where("tenantId", "==", tid)), (s: any) => setBills(sanitize(s.docs) as Bill[])),
@@ -267,7 +271,7 @@ const App: React.FC = () => {
       <Sidebar user={currentUser!} tenantName={clinicName} activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
       <main className="flex-1 lg:ml-64 flex flex-col min-w-0">
         <header className="bg-white border-b border-slate-200 sticky top-0 z-30 px-6 py-4 flex items-center justify-between shadow-sm lg:hidden">
-          <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-primary bg-slate-100 rounded-lg">{ICONS.Menu}</button>
+          <button onClick={() => setIsSidebarOpen(true)} className="p-2 btn-primary rounded-lg">{ICONS.Menu}</button>
           <h1 className="text-xl font-heading font-black text-primary">HF</h1>
         </header>
         <div className="p-6 md:p-10 flex-1 max-w-7xl mx-auto w-full">
@@ -275,10 +279,10 @@ const App: React.FC = () => {
           {activeTab === 'patients' && <Patients patients={patients} tenantId={currentUser!.tenantId} clinicName={clinicName} addPatient={addPatient} updatePatient={updatePatient} />}
           {activeTab === 'appointments' && <AppointmentsPage patients={patients} staff={staff} appointments={appointments} addAppointment={addAppointment} updateAppointmentStatus={updateAppointmentStatus} />}
           {activeTab === 'records' && <ConsultationRoom patients={patients} appointments={appointments} clinicName={clinicName} currentUser={currentUser} finalizeConsultation={finalizeConsultation} />}
-          {activeTab === 'billing' && <BillingPage patients={patients} appointments={appointments} records={records} prescriptions={prescriptions} bills={bills} clinicName={clinicName} addBill={addBill} />}
+          {activeTab === 'billing' && <BillingPage patients={patients} appointments={appointments} records={records} prescriptions={prescriptions} bills={bills} clinicName={clinicName} addBill={addBill} tenantSettings={tenantSettings} />}
           {activeTab === 'staff' && <StaffManagement staff={staff} addStaff={()=>{}} updateStaff={()=>{}} />}
           {activeTab === 'pharmacy' && <PharmacyPage prescriptions={prescriptions} patients={patients} clinicName={clinicName} onDispense={onDispense} />}
-          {activeTab === 'settings' && <SettingsPage />}
+          {activeTab === 'settings' && <SettingsPage tenantId={currentUser?.tenantId} currentSettings={tenantSettings} />}
         </div>
       </main>
     </div>
