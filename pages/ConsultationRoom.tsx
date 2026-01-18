@@ -41,8 +41,9 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
       setIsLoadingHistory(true);
       const q = query(clinicalCollections.records, where("patientId", "==", currentPat.id));
       
-      const unsub = onSnapshot(q, async (snapshot) => {
-        const fetched = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as MedicalRecord));
+      // Fix: Explicitly type the snapshot parameter to avoid DocumentSnapshot/QuerySnapshot confusion
+      const unsub = onSnapshot(q, async (snapshot: any) => {
+        const fetched = snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id } as MedicalRecord));
         const sorted = fetched.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setPastRecords(sorted);
         
@@ -279,7 +280,7 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
                    </div>
                    <div className="space-y-2">
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest subheading">Clinical Remarks & Recommendations</label>
-                      <textarea rows={3} className="w-full p-6 bg-slate-50 border border-slate-100 rounded-[2rem] outline-none text-sm text-slate-900" placeholder="Additional observations, general notes..." value={notes.remarks} onChange={e => setNotes({...notes, remarks: e.target.value})} />
+                      <textarea rows={3} className="w-full p-6 bg-slate-50 rounded-[2rem] border border-slate-100 rounded-[2rem] outline-none text-sm text-slate-900" placeholder="Additional observations, general notes..." value={notes.remarks} onChange={e => setNotes({...notes, remarks: e.target.value})} />
                    </div>
                 </div>
 

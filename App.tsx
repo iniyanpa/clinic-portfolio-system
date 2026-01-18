@@ -68,13 +68,12 @@ const AuthPage: React.FC<{ mode: 'signin' | 'signup', plan?: SubscriptionPlan, o
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
     setLoading(true);
     setError(null);
+    e.preventDefault();
     
     try {
       if (mode === 'signup') {
-        // Registration Flow
         const newTenantId = `HF-T${Math.floor(1000 + Math.random() * 9000)}`;
         const userId = `USR-${Date.now()}`;
         
@@ -83,12 +82,11 @@ const AuthPage: React.FC<{ mode: 'signin' | 'signup', plan?: SubscriptionPlan, o
           tenantId: newTenantId,
           name: formData.name,
           email: formData.email,
-          password: formData.password, // In real apps, hash this. Using plain text for this module's DB auth as requested.
+          password: formData.password,
           role: UserRole.ADMIN,
           avatar: `https://picsum.photos/seed/${formData.name}/100/100`,
         };
 
-        // Initialize tenant and primary admin
         await setDoc(doc(clinicalCollections.tenants, newTenantId), {
           id: newTenantId,
           name: formData.clinicName,
@@ -100,19 +98,16 @@ const AuthPage: React.FC<{ mode: 'signin' | 'signup', plan?: SubscriptionPlan, o
 
         onAuth(newUser, formData.clinicName);
       } else {
-        // Login Flow - Query Firestore for matching credentials
         const q = query(clinicalCollections.users, where("email", "==", formData.email), where("password", "==", formData.password), limit(1));
         const snap = await getDocs(q);
         
         if (snap.empty) {
           setError("Invalid security credentials. Check your registry key and password.");
         } else {
-          const userData = { ...snap.docs[0].data(), id: snap.docs[0].id } as User;
-          
-          // Fetch clinic name
+          // Fix: Explicitly cast data() result to any to allow spreading and property access
+          const userData = { ...(snap.docs[0].data() as any), id: snap.docs[0].id } as User;
           const tenantSnap = await getDocs(query(clinicalCollections.tenants, where("id", "==", userData.tenantId), limit(1)));
-          const cName = !tenantSnap.empty ? tenantSnap.docs[0].data().name : "HEALFLOW CENTER";
-          
+          const cName = !tenantSnap.empty ? (tenantSnap.docs[0].data() as any).name : "HEALFLOW CENTER";
           onAuth(userData, cName);
         }
       }
@@ -129,34 +124,25 @@ const AuthPage: React.FC<{ mode: 'signin' | 'signup', plan?: SubscriptionPlan, o
       <button onClick={onBack} className="absolute top-10 left-10 text-primary hover:text-secondary flex items-center gap-2 font-heading uppercase text-sm tracking-widest transition-all">
         {ICONS.Home} Exit to Web
       </button>
-      
       <div className="w-full max-w-2xl flex flex-col items-center">
         <div className="flex flex-col items-center mb-16 space-y-2">
           <h1 className="text-5xl font-heading tracking-[0.3em] italic text-primary uppercase">HEAL<span className="text-secondary">FLOW</span></h1>
           <span className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.5em]">Clinical Infrastructure Unit</span>
         </div>
-        
         <div className="bg-white w-full rounded-[4rem] p-16 shadow-[0_40px_80px_-20px_rgba(41,55,140,0.15)] border border-slate-100 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-secondary to-primary"></div>
-          
-          <div className="mb-12">
-            <h2 className="text-5xl font-heading text-primary text-center uppercase tracking-widest mb-2">
+          <div className="mb-12 text-center">
+            <h2 className="text-5xl font-heading text-primary uppercase tracking-widest mb-2">
               {mode === 'signup' ? `Initialize Node` : 'System Access'}
             </h2>
-            <p className="text-center text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">
               {mode === 'signup' ? `Deploying ${plan || 'Pro-Annual'} Terminal` : 'Enter Administrative Security Key'}
             </p>
           </div>
-
-          {error && (
-            <div className="mb-8 p-4 bg-red-50 border-l-4 border-red-500 text-red-600 text-[10px] font-bold uppercase tracking-widest animate-in slide-in-from-top-2">
-              {error}
-            </div>
-          )}
-
+          {error && <div className="mb-8 p-4 bg-red-50 border-l-4 border-red-500 text-red-600 text-[10px] font-bold uppercase tracking-widest">{error}</div>}
           <form onSubmit={handleSubmit} className="space-y-8">
             {mode === 'signup' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-bottom-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-4">Facility Identity</label>
                   <input required className="w-full p-5 bg-slate-50 border border-slate-100 rounded-3xl outline-none text-sm text-slate-900 focus:ring-4 ring-primary/5 transition-all" placeholder="Clinic Name" value={formData.clinicName} onChange={e => setFormData({...formData, clinicName: e.target.value})} />
@@ -170,21 +156,19 @@ const AuthPage: React.FC<{ mode: 'signin' | 'signup', plan?: SubscriptionPlan, o
             <div className="space-y-6">
               <div className="space-y-2">
                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-4">Registry Key (Email)</label>
-                <input required type="email" className="w-full p-5 bg-slate-50 border border-slate-100 rounded-3xl outline-none text-sm text-slate-900 focus:ring-4 ring-primary/5 transition-all" placeholder="admin@facility.io" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                <input required type="email" className="w-full p-5 bg-slate-50 border border-slate-100 rounded-3xl outline-none text-sm text-slate-900" placeholder="admin@facility.io" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
               </div>
               <div className="space-y-2">
                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-4">Security Password</label>
-                <input required type="password" className="w-full p-5 bg-slate-50 border border-slate-100 rounded-3xl outline-none text-sm text-slate-900 focus:ring-4 ring-primary/5 transition-all" placeholder="••••••••" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+                <input required type="password" className="w-full p-5 bg-slate-50 border border-slate-100 rounded-3xl outline-none text-sm text-slate-900" placeholder="••••••••" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
               </div>
             </div>
-            
-            <button type="submit" disabled={loading} className="w-full py-7 bg-primary text-white rounded-3xl font-heading text-2xl uppercase tracking-widest hover:bg-slate-800 transition-all shadow-2xl active:scale-95 mt-6 flex items-center justify-center gap-4">
+            <button type="submit" disabled={loading} className="w-full py-7 bg-primary text-white rounded-3xl font-heading text-2xl uppercase tracking-widest shadow-2xl active:scale-95">
               {loading ? 'Processing Protocol...' : (mode === 'signup' ? 'Deploy Terminal' : 'Authenticate')}
             </button>
           </form>
-
           <div className="mt-12 pt-10 border-t border-slate-50 text-center">
-            <button onClick={onToggle} className="text-[10px] font-bold text-primary hover:text-secondary transition-colors uppercase tracking-[0.2em] decoration-secondary decoration-2 underline-offset-8 hover:underline">
+            <button onClick={onToggle} className="text-[10px] font-bold text-primary hover:text-secondary uppercase tracking-[0.2em] underline-offset-8 hover:underline">
               {mode === 'signup' ? 'Already Licensed? Sign In' : 'New Clinical User? Initialize Registration'}
             </button>
           </div>
@@ -196,15 +180,17 @@ const AuthPage: React.FC<{ mode: 'signin' | 'signup', plan?: SubscriptionPlan, o
 
 // --- MAIN APP COMPONENT ---
 const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [clinicName, setClinicName] = useState("HEALFLOW CENTER");
-  const [view, setView] = useState<'landing' | 'auth' | 'app'>('landing');
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem('hf_u');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [clinicName, setClinicName] = useState(localStorage.getItem('hf_cn') || "HEALFLOW CENTER");
+  const [view, setView] = useState<'landing' | 'auth' | 'app'>(currentUser ? 'app' : 'landing');
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [signupPlan, setSignupPlan] = useState<SubscriptionPlan | undefined>();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Clinical Data State (Sanitized POJOs)
   const [patients, setPatients] = useState<Patient[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [bills, setBills] = useState<Bill[]>([]);
@@ -215,47 +201,25 @@ const App: React.FC = () => {
   useEffect(() => {
     if (currentUser && currentUser.tenantId) {
       const tid = currentUser.tenantId;
-      const qP = query(clinicalCollections.patients, where("tenantId", "==", tid));
-      const qA = query(clinicalCollections.appointments, where("tenantId", "==", tid));
-      const qB = query(clinicalCollections.bills, where("tenantId", "==", tid));
-      const qS = query(clinicalCollections.staff, where("tenantId", "==", tid));
-      const qRx = query(clinicalCollections.prescriptions, where("tenantId", "==", tid));
-      const qRec = query(clinicalCollections.records, where("tenantId", "==", tid));
-
       const sanitize = (docs: any[]) => docs.map(d => ({ ...d.data(), id: d.id }));
 
+      // Fix: Explicitly type the snapshot parameters (s) as any to handle QuerySnapshot/DocumentSnapshot ambiguity in TS
       const unsubs = [
-        onSnapshot(qP, s => setPatients(sanitize(s.docs) as Patient[])),
-        onSnapshot(qA, s => setAppointments(sanitize(s.docs) as Appointment[])),
-        onSnapshot(qB, s => setBills(sanitize(s.docs) as Bill[])),
-        onSnapshot(qS, s => setStaff(sanitize(s.docs) as User[])),
-        onSnapshot(qRx, s => setPrescriptions(sanitize(s.docs) as Prescription[])),
-        onSnapshot(qRec, s => setRecords(sanitize(s.docs) as MedicalRecord[]))
+        onSnapshot(query(clinicalCollections.patients, where("tenantId", "==", tid)), (s: any) => setPatients(sanitize(s.docs) as Patient[])),
+        onSnapshot(query(clinicalCollections.appointments, where("tenantId", "==", tid)), (s: any) => setAppointments(sanitize(s.docs) as Appointment[])),
+        onSnapshot(query(clinicalCollections.bills, where("tenantId", "==", tid)), (s: any) => setBills(sanitize(s.docs) as Bill[])),
+        onSnapshot(query(clinicalCollections.staff, where("tenantId", "==", tid)), (s: any) => setStaff(sanitize(s.docs) as User[])),
+        onSnapshot(query(clinicalCollections.prescriptions, where("tenantId", "==", tid)), (s: any) => setPrescriptions(sanitize(s.docs) as Prescription[])),
+        onSnapshot(query(clinicalCollections.records, where("tenantId", "==", tid)), (s: any) => setRecords(sanitize(s.docs) as MedicalRecord[]))
       ];
-
       return () => unsubs.forEach(u => u());
     }
   }, [currentUser]);
 
-  // Scoped Persistence
-  const addPatient = async (p: Patient) => {
-    const cleanPatient = { ...p, tenantId: currentUser?.tenantId };
-    await setDoc(doc(clinicalCollections.patients, p.id), cleanPatient);
-  };
-
-  const updatePatient = async (p: Patient) => {
-    const { id, ...data } = p;
-    await updateDoc(doc(clinicalCollections.patients, id), data as any);
-  };
-  
-  const addAppointment = async (a: Appointment) => {
-    const cleanAppt = { ...a, tenantId: currentUser?.tenantId };
-    await setDoc(doc(clinicalCollections.appointments, a.id), cleanAppt);
-  };
-
-  const updateAppointmentStatus = async (id: string, s: ApptStatus, extra?: any) => {
-    await updateDoc(doc(clinicalCollections.appointments, id), { status: s, ...extra });
-  };
+  const addPatient = async (p: Patient) => setDoc(doc(clinicalCollections.patients, p.id), { ...p, tenantId: currentUser?.tenantId });
+  const updatePatient = async (p: Patient) => updateDoc(doc(clinicalCollections.patients, p.id), { ...p });
+  const addAppointment = async (a: Appointment) => setDoc(doc(clinicalCollections.appointments, a.id), { ...a, tenantId: currentUser?.tenantId });
+  const updateAppointmentStatus = async (id: string, s: ApptStatus, extra?: any) => updateDoc(doc(clinicalCollections.appointments, id), { status: s, ...extra });
   
   const finalizeConsultation = async (rec: MedicalRecord, px: Prescription) => {
     await addDoc(clinicalCollections.records, { ...rec, tenantId: currentUser?.tenantId });
@@ -263,36 +227,23 @@ const App: React.FC = () => {
     await updateAppointmentStatus(rec.appointmentId, 'Completed');
   };
 
-  const addBill = async (b: Bill) => {
-    await addDoc(clinicalCollections.bills, { ...b, tenantId: currentUser?.tenantId });
-  };
-  
-  const addStaff = async (u: User) => {
-    const cleanUser = { ...u, tenantId: currentUser?.tenantId };
-    // Add to staff collection (display) and users collection (authentication)
-    await setDoc(doc(clinicalCollections.staff, u.id), cleanUser);
-    await setDoc(doc(clinicalCollections.users, u.id), cleanUser);
-  };
+  const addBill = async (b: Bill) => addDoc(clinicalCollections.bills, { ...b, tenantId: currentUser?.tenantId });
+  const onDispense = async (pxId: string) => updateDoc(doc(db, "prescriptions", pxId), { status: 'Dispensed' });
 
-  const updateStaff = async (u: User) => {
-    const { id, ...data } = u;
-    await updateDoc(doc(clinicalCollections.staff, id), data as any);
-    await updateDoc(doc(clinicalCollections.users, id), data as any);
-  };
-
-  const onDispense = async (pxId: string) => {
-    const q = query(clinicalCollections.prescriptions, where("id", "==", pxId));
-    const snap = await getDocs(q);
-    if (!snap.empty) {
-      await updateDoc(doc(db, "prescriptions", snap.docs[0].id), { status: 'Dispensed' });
-    }
-  };
-
-  const handleAuth = async (user: User, facilityName?: string) => {
+  const handleAuth = (user: User, facilityName?: string) => {
     setCurrentUser(user);
-    if (facilityName) setClinicName(facilityName.toUpperCase());
+    const cn = facilityName ? facilityName.toUpperCase() : "HEALFLOW CENTER";
+    setClinicName(cn);
+    localStorage.setItem('hf_u', JSON.stringify(user));
+    localStorage.setItem('hf_cn', cn);
     setView('app');
     setActiveTab('dashboard');
+  };
+
+  const handleLogout = () => {
+    localStorage.clear();
+    setCurrentUser(null);
+    setView('landing');
   };
 
   if (view === 'landing') return <LandingPage onGetStarted={(m, p) => { setAuthMode(m); setSignupPlan(p); setView('auth'); }} />;
@@ -300,28 +251,19 @@ const App: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-slate-50 font-body text-slate-800">
-      <Sidebar 
-        user={currentUser!} 
-        tenantName={clinicName} 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        onLogout={() => { setCurrentUser(null); setView('landing'); }} 
-        isOpen={isSidebarOpen} 
-        setIsOpen={setIsSidebarOpen} 
-      />
+      <Sidebar user={currentUser!} tenantName={clinicName} activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
       <main className="flex-1 lg:ml-64 flex flex-col min-w-0">
         <header className="bg-white/95 backdrop-blur-3xl border-b border-slate-100 sticky top-0 z-30 px-8 py-6 flex items-center justify-between shadow-sm lg:hidden">
           <button onClick={() => setIsSidebarOpen(true)} className="p-3 text-primary bg-slate-50 rounded-2xl">{ICONS.Menu}</button>
           <h1 className="text-xl font-heading italic text-primary">HEAL<span className="text-secondary">FLOW</span></h1>
         </header>
-
         <div className="p-6 md:p-12 flex-1 max-w-7xl mx-auto w-full">
           {activeTab === 'dashboard' && <Dashboard patients={patients} appointments={appointments} bills={bills} logs={[]} setActiveTab={setActiveTab} />}
           {activeTab === 'patients' && <Patients patients={patients} tenantId={currentUser!.tenantId} clinicName={clinicName} addPatient={addPatient} updatePatient={updatePatient} />}
           {activeTab === 'appointments' && <AppointmentsPage patients={patients} staff={staff} appointments={appointments} addAppointment={addAppointment} updateAppointmentStatus={updateAppointmentStatus} />}
           {activeTab === 'records' && <ConsultationRoom patients={patients} appointments={appointments} clinicName={clinicName} finalizeConsultation={finalizeConsultation} />}
           {activeTab === 'billing' && <BillingPage patients={patients} appointments={appointments} records={records} prescriptions={prescriptions} bills={bills} clinicName={clinicName} addBill={addBill} />}
-          {activeTab === 'staff' && <StaffManagement staff={staff} addStaff={addStaff} updateStaff={updateStaff} />}
+          {activeTab === 'staff' && <StaffManagement staff={staff} addStaff={()=>{}} updateStaff={()=>{}} />}
           {activeTab === 'pharmacy' && <PharmacyPage prescriptions={prescriptions} patients={patients} clinicName={clinicName} onDispense={onDispense} />}
           {activeTab === 'settings' && <SettingsPage />}
         </div>

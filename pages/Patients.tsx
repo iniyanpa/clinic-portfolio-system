@@ -49,8 +49,9 @@ const Patients: React.FC<PatientsProps> = ({ patients, tenantId, clinicName, add
       setIsLoadingRecords(true);
       const q = query(clinicalCollections.records, where("patientId", "==", viewingPatientId));
       
-      const unsub = onSnapshot(q, (snapshot) => {
-        const fetched = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as MedicalRecord));
+      // Fix: Explicitly type the snapshot parameter to avoid DocumentSnapshot/QuerySnapshot confusion
+      const unsub = onSnapshot(q, (snapshot: any) => {
+        const fetched = snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id } as MedicalRecord));
         const sorted = fetched.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setPatientRecords(sorted);
         setIsLoadingRecords(false);
