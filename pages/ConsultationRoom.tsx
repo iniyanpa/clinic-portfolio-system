@@ -134,7 +134,25 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         <div className="bg-white p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border border-slate-200 shadow-sm h-fit space-y-6 sm:space-y-8 order-2 lg:order-1">
-           <h4 className="text-xl sm:text-2xl font-bold text-slate-700 border-b border-slate-100 pb-3 sm:pb-4 uppercase tracking-widest">Vitals</h4>
+           <h4 className="text-xl sm:text-2xl font-bold text-slate-700 border-b border-slate-100 pb-3 sm:pb-4 uppercase tracking-widest">Clinical Snapshot</h4>
+           
+           {/* ATTACHMENT DISPLAY: Strictly conditional based on current appointment upload */}
+           {currentAppt.labRecordBase64 ? (
+              <div className="bg-blue-50 p-6 rounded-2xl border border-blue-200 shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                   <div className="text-primary">{ICONS.Records}</div>
+                   <p className="text-[9px] font-bold text-primary uppercase tracking-widest">Patient Attachment</p>
+                </div>
+                <a href={currentAppt.labRecordBase64} download={currentAppt.labRecordName || 'patient_record.pdf'} className="flex items-center gap-3 bg-white p-3 rounded-xl border border-blue-100 hover:border-primary hover:shadow-md transition-all group">
+                  <div className="bg-blue-50 p-2 rounded-lg text-primary group-hover:bg-primary group-hover:text-white transition-colors">{ICONS.Download}</div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-bold text-slate-800 block truncate">{currentAppt.labRecordName || 'View Document'}</span>
+                    <span className="text-[8px] font-bold text-slate-400 uppercase">Appointment Reference File</span>
+                  </div>
+                </a>
+              </div>
+           ) : null}
+
            <div className="grid grid-cols-2 gap-3 sm:gap-4">
              {Object.entries(currentAppt.vitals || {}).map(([key, val]) => (
                <div key={key} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col gap-1">
@@ -143,20 +161,10 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
                </div>
              ))}
            </div>
-           
-           {currentAppt.labRecordBase64 && (
-              <div className="bg-blue-50 p-6 sm:p-8 rounded-2xl sm:rounded-[2rem] border border-blue-100">
-                <p className="text-[8px] font-bold text-primary uppercase tracking-widest mb-3">Lab Record</p>
-                <a href={currentAppt.labRecordBase64} download={currentAppt.labRecordName || 'record.pdf'} className="flex items-center gap-3 bg-white p-3 rounded-xl border border-blue-100 hover:bg-blue-100 transition-colors">
-                  <div className="text-primary">{ICONS.Download}</div>
-                  <span className="text-[9px] font-bold text-slate-700 truncate">{currentAppt.labRecordName || 'Download'}</span>
-                </a>
-              </div>
-           )}
 
            <div className="bg-orange-50 p-6 sm:p-8 rounded-2xl sm:rounded-[2rem] border border-orange-100">
-              <p className="text-[8px] font-bold text-orange-400 uppercase tracking-widest mb-3">Symptoms</p>
-              <p className="font-bold text-slate-700 leading-relaxed italic text-xs">"{currentAppt.initialSymptoms || 'Nil.'}"</p>
+              <p className="text-[8px] font-bold text-orange-400 uppercase tracking-widest mb-3">Clinical Presentation</p>
+              <p className="font-bold text-slate-700 leading-relaxed italic text-xs">"{currentAppt.initialSymptoms || 'No initial symptoms noted.'}"</p>
            </div>
         </div>
 
@@ -226,16 +234,16 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
         </div>
       </div>
 
-      {/* Patient History Section */}
+      {/* Patient History Section: Text-only focus */}
       <div className="bg-white p-6 sm:p-12 rounded-[2rem] sm:rounded-[4rem] border border-slate-200 shadow-sm space-y-6 sm:space-y-8 mt-6 sm:mt-12">
         <div className="flex items-center gap-3 sm:gap-4 border-b border-slate-100 pb-3 sm:pb-4">
           <div className="p-2 sm:p-3 bg-secondary/10 text-secondary rounded-xl">{ICONS.Records}</div>
-          <h3 className="text-xl sm:text-2xl font-heading font-bold text-slate-700 uppercase">Medical History</h3>
+          <h3 className="text-xl sm:text-2xl font-heading font-bold text-slate-700 uppercase">Clinical Timeline</h3>
         </div>
         
         {patientHistory.length === 0 ? (
           <div className="py-10 sm:py-20 text-center">
-            <p className="text-slate-300 font-bold italic text-xs sm:text-sm">No clinical records found.</p>
+            <p className="text-slate-300 font-bold italic text-xs sm:text-sm">No clinical records found for this patient node.</p>
           </div>
         ) : (
           <div className="space-y-4 sm:space-y-6">
@@ -253,11 +261,11 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
                   <div className="space-y-2">
-                    <h5 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Notes</h5>
-                    <p className="text-[11px] sm:text-sm text-slate-600 leading-relaxed bg-white p-4 rounded-xl border border-slate-100 italic">"{rec.notes || 'Nil.'}"</p>
+                    <h5 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Observations</h5>
+                    <p className="text-[11px] sm:text-sm text-slate-600 leading-relaxed bg-white p-4 rounded-xl border border-slate-100 italic">"{rec.notes || 'No specific notes recorded.'}"</p>
                   </div>
                   <div className="space-y-2">
-                    <h5 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Vitals</h5>
+                    <h5 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Historical Vitals</h5>
                     <div className="grid grid-cols-3 gap-2">
                       {Object.entries(rec.vitals || {}).map(([vKey, vVal]) => (
                         <div key={vKey} className="bg-white p-2 rounded-lg border border-slate-100 flex flex-col items-center">
