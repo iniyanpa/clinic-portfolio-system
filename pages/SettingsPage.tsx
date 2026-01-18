@@ -57,31 +57,30 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ tenantId, currentSettings }
         logoUrl: clinicInfo.logoUrl,
         logoBase64: clinicInfo.logoBase64
       });
-      alert("Clinic profile and configuration synced.");
+      alert("Settings synced.");
     } catch (e) {
-      alert("Sync failed. Check connection.");
+      alert("Failed.");
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <div className="space-y-10 animate-in fade-in">
+    <div className="space-y-6 sm:space-y-10 animate-in fade-in pb-10">
       <div>
-        <h2 className="text-3xl font-heading text-primary uppercase leading-none">Facility Hub</h2>
-        <p className="subheading text-secondary font-bold text-[10px] tracking-widest uppercase">System Master Node</p>
+        <h2 className="text-2xl sm:text-3xl font-heading text-primary uppercase leading-none">Facility Hub</h2>
+        <p className="subheading text-secondary font-bold text-[9px] tracking-widest uppercase">System Master Node</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Clinic Branding Section */}
-        <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 space-y-6">
-           <h3 className="font-heading text-lg text-slate-700 uppercase tracking-widest border-b pb-3">Branding & Letterhead</h3>
-           <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+        <div className="bg-white p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] shadow-sm border border-slate-100 space-y-6">
+           <h3 className="font-heading text-base sm:text-lg text-slate-700 uppercase tracking-widest border-b pb-3">Branding</h3>
+           <div className="space-y-5">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-2">Clinic Logo Attachment</label>
-                <div className="flex items-center gap-4">
+                <label className="text-[9px] font-bold text-slate-400 uppercase ml-2">Logo</label>
+                <div className="flex flex-col sm:flex-row items-center gap-4">
                   {clinicInfo.logoBase64 ? (
-                    <img src={clinicInfo.logoBase64} alt="Logo Preview" className="w-16 h-16 rounded-xl object-cover border border-slate-200" />
+                    <img src={clinicInfo.logoBase64} alt="Preview" className="w-16 h-16 rounded-xl object-cover border border-slate-200" />
                   ) : (
                     <div className="w-16 h-16 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center text-slate-300">
                       {ICONS.Home}
@@ -90,46 +89,35 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ tenantId, currentSettings }
                   <input 
                     type="file"
                     accept="image/*"
-                    className="flex-1 bg-slate-50 border border-slate-200 outline-none font-bold text-[10px] p-2 rounded-xl"
+                    className="w-full bg-slate-50 border border-slate-200 outline-none font-bold text-[9px] p-2 rounded-xl"
                     onChange={handleLogoUpload}
                   />
                 </div>
-                <p className="text-[8px] text-slate-400 ml-2">Restrict to JPG, PNG, WEBP formats.</p>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-2">Clinic Logo URL (Optional)</label>
-                <input 
-                  className="w-full bg-slate-50 border border-slate-200 outline-none font-bold text-xs" 
-                  value={clinicInfo.logoUrl} 
-                  onChange={e => setClinicInfo({...clinicInfo, logoUrl: e.target.value})}
-                  placeholder="Alternatively, provide a link..."
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-2">Clinic Physical Address</label>
+                <label className="text-[9px] font-bold text-slate-400 uppercase ml-2">Address</label>
                 <textarea 
-                  rows={2}
-                  className="w-full bg-slate-50 border border-slate-200 outline-none font-bold text-xs" 
+                  rows={3}
+                  className="w-full bg-slate-50 border border-slate-200 outline-none font-bold text-xs p-3 rounded-xl shadow-inner" 
                   value={clinicInfo.address} 
                   onChange={e => setClinicInfo({...clinicInfo, address: e.target.value})}
-                  placeholder="Full clinic address for letterhead..."
+                  placeholder="Street, City..."
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase ml-2">Support Phone</label>
+                  <label className="text-[9px] font-bold text-slate-400 uppercase ml-2">Phone</label>
                   <input 
-                    className="w-full bg-slate-50 border border-slate-200 outline-none font-bold text-xs" 
+                    className="w-full bg-slate-50 border border-slate-200 outline-none font-bold text-xs p-2.5 rounded-xl shadow-inner" 
                     value={clinicInfo.phone} 
                     onChange={e => setClinicInfo({...clinicInfo, phone: e.target.value})}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase ml-2">Support Email</label>
+                  <label className="text-[9px] font-bold text-slate-400 uppercase ml-2">Email</label>
                   <input 
-                    className="w-full bg-slate-50 border border-slate-200 outline-none font-bold text-xs" 
+                    className="w-full bg-slate-50 border border-slate-200 outline-none font-bold text-xs p-2.5 rounded-xl shadow-inner" 
                     value={clinicInfo.email} 
                     onChange={e => setClinicInfo({...clinicInfo, email: e.target.value})}
                   />
@@ -138,36 +126,35 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ tenantId, currentSettings }
            </div>
         </div>
 
-        {/* Fees Section */}
-        <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 space-y-6">
-           <h3 className="font-heading text-lg text-slate-700 uppercase tracking-widest border-b pb-3">Financial Configuration</h3>
-           <div className="space-y-4">
+        <div className="bg-white p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] shadow-sm border border-slate-100 space-y-6">
+           <h3 className="font-heading text-base sm:text-lg text-slate-700 uppercase tracking-widest border-b pb-3">Financials</h3>
+           <div className="space-y-5">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-2">Base Consultation Fee (INR)</label>
+                <label className="text-[9px] font-bold text-slate-400 uppercase ml-2">Consultation (INR)</label>
                 <input 
                   type="number" 
-                  className="w-full bg-slate-50 border border-slate-200 outline-none font-black text-sm" 
+                  className="w-full bg-slate-50 border border-slate-200 outline-none font-black text-sm p-3 rounded-xl shadow-inner" 
                   value={fees.consultation} 
                   onChange={e => setFees({...fees, consultation: parseInt(e.target.value) || 0})}
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-2">Platform & Facility Charge (INR)</label>
+                <label className="text-[9px] font-bold text-slate-400 uppercase ml-2">Platform Fee (INR)</label>
                 <input 
                   type="number" 
-                  className="w-full bg-slate-50 border border-slate-200 outline-none font-black text-sm" 
+                  className="w-full bg-slate-50 border border-slate-200 outline-none font-black text-sm p-3 rounded-xl shadow-inner" 
                   value={fees.platform} 
                   onChange={e => setFees({...fees, platform: parseInt(e.target.value) || 0})}
                 />
               </div>
               
-              <div className="pt-6">
+              <div className="pt-4">
                 <button 
                   onClick={saveSettings} 
                   disabled={isSaving}
-                  className="w-full py-4 bg-primary text-white rounded-2xl font-bold uppercase tracking-widest shadow-lg hover:bg-secondary transition-all disabled:opacity-50"
+                  className="w-full py-4 bg-primary text-white rounded-2xl font-bold uppercase tracking-widest shadow-lg hover:bg-secondary transition-all disabled:opacity-50 text-[10px]"
                 >
-                  {isSaving ? 'Updating Node...' : 'Sync Clinical Profile'}
+                  {isSaving ? 'Saving...' : 'Sync Master Node'}
                 </button>
               </div>
            </div>

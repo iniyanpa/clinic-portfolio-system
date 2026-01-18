@@ -18,18 +18,18 @@ const LandingPage: React.FC<{ onGetStarted: (mode: 'signin' | 'signup', plan?: S
   return (
     <div className="min-h-screen bg-slate-50 font-body overflow-x-hidden">
       <nav className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="bg-primary text-white p-2 rounded-xl shadow-lg">
               <span className="font-heading font-black text-xl italic">HF</span>
             </div>
-            <h1 className="text-2xl font-heading font-bold text-primary tracking-tight">HealFlow</h1>
+            <h1 className="text-xl sm:text-2xl font-heading font-bold text-primary tracking-tight">HealFlow</h1>
           </div>
-          <div className="flex items-center gap-6">
-            <button onClick={() => onGetStarted('signin')} className="text-slate-600 font-bold hover:text-primary transition-colors">Doctor Login</button>
+          <div className="flex items-center gap-3 sm:gap-6">
+            <button onClick={() => onGetStarted('signin')} className="text-slate-600 font-bold hover:text-primary transition-colors text-[10px] sm:text-xs">Login</button>
             <button 
               onClick={() => onGetStarted('signup', 'Pro-Annual')}
-              className="px-8 py-3 bg-primary text-white rounded-2xl font-bold shadow-xl hover:bg-secondary transition-all"
+              className="px-4 sm:px-8 py-2 sm:py-3 bg-primary text-white rounded-xl sm:rounded-2xl font-bold shadow-xl hover:bg-secondary transition-all text-[10px] sm:text-xs"
             >
               Get Started
             </button>
@@ -39,25 +39,25 @@ const LandingPage: React.FC<{ onGetStarted: (mode: 'signin' | 'signup', plan?: S
 
       <header className="max-w-7xl mx-auto px-6 pt-32 pb-20 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         <div className="space-y-8">
-          <div className="inline-block px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-xs font-bold uppercase tracking-widest border border-blue-100">
+          <div className="inline-block px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-[10px] font-bold uppercase tracking-widest border border-blue-100">
             Trusted by 5,000+ Doctors Across India
           </div>
-          <h2 className="text-5xl lg:text-7xl font-heading font-bold text-primary leading-[1.1]">
-            The Smart Way to <br/><span className="text-secondary text-5xl lg:text-6xl">Manage Your OPD.</span>
+          <h2 className="text-4xl lg:text-7xl font-heading font-bold text-primary leading-[1.1]">
+            The Smart Way to <br/><span className="text-secondary text-4xl lg:text-6xl">Manage Your OPD.</span>
           </h2>
-          <p className="text-lg text-slate-500 max-w-lg leading-relaxed font-medium">
+          <p className="text-base sm:text-lg text-slate-500 max-w-lg leading-relaxed font-medium">
             Join the digital healthcare revolution. Manage patient records, generate digital prescriptions (Rx), and automate your clinic's billing & pharmacy with HealFlow.
           </p>
           <div className="flex flex-wrap gap-4">
             <button 
               onClick={() => onGetStarted('signup', 'Pro-Annual')}
-              className="px-10 py-5 bg-primary text-white rounded-2xl font-bold text-lg shadow-2xl hover:scale-105 transition-all"
+              className="w-full sm:w-auto px-10 py-5 bg-primary text-white rounded-2xl font-bold text-lg shadow-2xl hover:scale-105 transition-all"
             >
               Start Free Trial
             </button>
           </div>
         </div>
-        <div className="relative">
+        <div className="hidden lg:block relative">
           <img 
             src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1200" 
             className="rounded-[3rem] shadow-2xl border-8 border-white" 
@@ -69,24 +69,24 @@ const LandingPage: React.FC<{ onGetStarted: (mode: 'signin' | 'signup', plan?: S
       <section className="bg-white py-24">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16 space-y-4">
-            <h3 className="text-4xl font-heading font-bold text-primary">Everything your clinic needs.</h3>
-            <p className="text-slate-500 text-lg">Detailed features built for Indian healthcare professionals.</p>
+            <h3 className="text-3xl sm:text-4xl font-heading font-bold text-primary">Everything your clinic needs.</h3>
+            <p className="text-slate-500 text-base sm:text-lg">Detailed features built for Indian healthcare professionals.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-10 bg-slate-50 rounded-[3rem] space-y-6 hover:shadow-xl transition-all border border-slate-100">
-              <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center">{ICONS.Records}</div>
-              <h4 className="text-2xl font-bold text-primary">Paperless EMR</h4>
-              <p className="text-slate-600 leading-relaxed">Capture full patient history, vitals, and chronic issues. Access any file from anywhere instantly.</p>
+            <div className="p-8 sm:p-10 bg-slate-50 rounded-[2.5rem] sm:rounded-[3rem] space-y-6 hover:shadow-xl transition-all border border-slate-100">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center">{ICONS.Records}</div>
+              <h4 className="text-xl sm:text-2xl font-bold text-primary">Paperless EMR</h4>
+              <p className="text-slate-600 text-sm sm:text-base leading-relaxed">Capture full patient history, vitals, and chronic issues. Access any file from anywhere instantly.</p>
             </div>
-            <div className="p-10 bg-slate-50 rounded-[3rem] space-y-6 hover:shadow-xl transition-all border border-slate-100">
-              <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center">{ICONS.Billing}</div>
-              <h4 className="text-2xl font-bold text-primary">Billing & GST</h4>
-              <p className="text-slate-600 leading-relaxed">Fast billing with UPI QR integration. Generate tax-compliant PDF invoices for every visit.</p>
+            <div className="p-8 sm:p-10 bg-slate-50 rounded-[2.5rem] sm:rounded-[3rem] space-y-6 hover:shadow-xl transition-all border border-slate-100">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center">{ICONS.Billing}</div>
+              <h4 className="text-xl sm:text-2xl font-bold text-primary">Billing & GST</h4>
+              <p className="text-slate-600 text-sm sm:text-base leading-relaxed">Fast billing with UPI QR integration. Generate tax-compliant PDF invoices for every visit.</p>
             </div>
-            <div className="p-10 bg-slate-50 rounded-[3rem] space-y-6 hover:shadow-xl transition-all border border-slate-100">
-              <div className="w-16 h-16 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center">{ICONS.Staff}</div>
-              <h4 className="text-2xl font-bold text-primary">Direct Pharmacy</h4>
-              <p className="text-slate-600 leading-relaxed">Prescriptions go straight to your in-clinic pharmacy, ensuring accurate medicine dispensing.</p>
+            <div className="p-8 sm:p-10 bg-slate-50 rounded-[2.5rem] sm:rounded-[3rem] space-y-6 hover:shadow-xl transition-all border border-slate-100">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center">{ICONS.Staff}</div>
+              <h4 className="text-xl sm:text-2xl font-bold text-primary">Direct Pharmacy</h4>
+              <p className="text-slate-600 text-sm sm:text-base leading-relaxed">Prescriptions go straight to your in-clinic pharmacy, ensuring accurate medicine dispensing.</p>
             </div>
           </div>
         </div>
@@ -94,8 +94,8 @@ const LandingPage: React.FC<{ onGetStarted: (mode: 'signin' | 'signup', plan?: S
 
       <footer className="py-16 bg-white border-t border-slate-100">
         <div className="max-w-7xl mx-auto px-6 text-center md:text-left flex flex-col md:flex-row justify-between items-center gap-8">
-          <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">© 2024 HealFlow. Built for Indian Doctors.</p>
-          <div className="flex gap-8 text-sm font-bold text-slate-400">
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">© 2024 HealFlow. Built for Indian Doctors.</p>
+          <div className="flex gap-8 text-[10px] font-bold text-slate-400">
             <a href="#" className="hover:text-primary">Support</a>
             <a href="#" className="hover:text-primary">Privacy</a>
             <a href="#" className="hover:text-primary">Contact</a>
@@ -161,15 +161,15 @@ const AuthPage: React.FC<{ mode: 'signin' | 'signup', plan?: SubscriptionPlan, o
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-6 font-body">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4 sm:p-6 font-body">
       <div className="w-full max-w-lg space-y-10">
         <div className="text-center">
-          <h1 className="text-4xl font-heading font-black text-primary">HealFlow</h1>
+          <h1 className="text-3xl sm:text-4xl font-heading font-black text-primary">HealFlow</h1>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Clinical Access Unit</p>
         </div>
-        <div className="bg-slate-50 p-12 rounded-[3rem] border border-slate-100 shadow-sm">
-          <h2 className="text-3xl font-bold text-slate-800 mb-8">{mode === 'signup' ? 'Activate Node' : 'Clinic Login'}</h2>
-          {error && <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl font-bold text-sm">{error}</div>}
+        <div className="bg-slate-50 p-8 sm:p-12 rounded-[2.5rem] sm:rounded-[3rem] border border-slate-100 shadow-sm">
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-8 text-center">{mode === 'signup' ? 'Activate Node' : 'Clinic Login'}</h2>
+          {error && <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl font-bold text-xs">{error}</div>}
           <form onSubmit={handleSubmit} className="space-y-6">
             {mode === 'signup' && (
               <>
@@ -179,17 +179,17 @@ const AuthPage: React.FC<{ mode: 'signin' | 'signup', plan?: SubscriptionPlan, o
             )}
             <input required type="email" className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none" placeholder="Email Address" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
             <input required type="password" className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none" placeholder="Password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
-            <button type="submit" disabled={loading} className="w-full py-5 bg-primary text-white rounded-2xl font-bold text-lg shadow-2xl transition-all">
+            <button type="submit" disabled={loading} className="w-full py-5 bg-primary text-white rounded-2xl font-bold text-base sm:text-lg shadow-2xl transition-all">
               {loading ? 'Processing...' : (mode === 'signup' ? 'Activate System' : 'Sign In')}
             </button>
           </form>
           <div className="mt-8 text-center">
-            <button onClick={onToggle} className="text-primary font-bold hover:underline">
+            <button onClick={onToggle} className="text-primary font-bold hover:underline text-xs sm:text-sm">
               {mode === 'signup' ? 'Already have an account? Sign In' : 'New Clinic? Register Now'}
             </button>
           </div>
         </div>
-        <button onClick={onBack} className="w-full text-slate-400 font-bold uppercase tracking-widest text-[10px] hover:text-primary transition-all">← Back to Homepage</button>
+        <button onClick={onBack} className="w-full text-slate-400 font-bold uppercase tracking-widest text-[10px] hover:text-primary transition-all text-center">← Back to Homepage</button>
       </div>
     </div>
   );
@@ -284,19 +284,19 @@ const App: React.FC = () => {
         isOpen={isSidebarOpen} 
         setIsOpen={setIsSidebarOpen} 
       />
-      <main className="flex-1 lg:ml-64 flex flex-col min-w-0">
-        <header className="bg-white border-b border-slate-200 sticky top-0 z-30 px-6 py-4 flex items-center justify-between shadow-sm lg:hidden">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
-            <button onClick={(e) => { e.stopPropagation(); setIsSidebarOpen(true); }} className="p-2 btn-primary rounded-lg mr-2">{ICONS.Menu}</button>
+      <main className="flex-1 lg:ml-64 flex flex-col min-w-0 overflow-x-hidden">
+        <header className="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 sm:px-6 py-4 flex items-center justify-between shadow-sm lg:hidden">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
+            <button onClick={(e) => { e.stopPropagation(); setIsSidebarOpen(true); }} className="p-2 bg-slate-100 rounded-lg text-primary">{ICONS.Menu}</button>
             {tenantLogo ? (
               <img src={tenantLogo} alt="Logo" className="w-8 h-8 rounded-lg object-cover" />
             ) : (
               <div className="text-primary">{ICONS.Home}</div>
             )}
-            <h1 className="text-lg font-heading font-black text-primary truncate">{clinicName}</h1>
+            <h1 className="text-base font-heading font-black text-primary truncate max-w-[150px]">{clinicName}</h1>
           </div>
         </header>
-        <div className="p-6 md:p-8 flex-1 max-w-7xl mx-auto w-full">
+        <div className="p-4 sm:p-6 md:p-8 flex-1 max-w-7xl mx-auto w-full">
           {activeTab === 'dashboard' && <Dashboard patients={patients} appointments={appointments} bills={bills} logs={[]} setActiveTab={setActiveTab} />}
           {activeTab === 'patients' && <Patients patients={patients} tenantId={currentUser!.tenantId} clinicName={clinicName} addPatient={addPatient} updatePatient={updatePatient} />}
           {activeTab === 'appointments' && <AppointmentsPage patients={patients} staff={staff} appointments={appointments} addAppointment={addAppointment} updateAppointmentStatus={updateAppointmentStatus} />}

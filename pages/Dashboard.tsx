@@ -26,29 +26,29 @@ const Dashboard: React.FC<DashboardProps> = ({ patients, appointments, bills, lo
   }, [bills, appointments]);
 
   return (
-    <div className="space-y-10 animate-in fade-in">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="space-y-6 sm:space-y-10 animate-in fade-in">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {[
           { label: 'OPD Revenue', value: '₹' + analytics.totalRev.toLocaleString('en-IN'), icon: ICONS.Billing, color: 'text-green-500' },
           { label: 'Active Queue', value: analytics.pendingAppts, icon: ICONS.Appointments, color: 'text-primary' },
           { label: 'Patient Nodes', value: patients.length, icon: ICONS.Patients, color: 'text-secondary' },
           { label: 'System Logs', value: logs.length, icon: ICONS.SMS, color: 'text-amber-500' },
         ].map((stat, i) => (
-          <div key={i} className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-100 group hover:border-primary transition-all">
-            <div className="flex justify-between items-center mb-6">
-               <div className={`p-4 bg-slate-50 rounded-2xl ${stat.color} group-hover:bg-primary group-hover:text-white transition-all`}>{stat.icon}</div>
+          <div key={i} className="bg-white p-6 sm:p-8 rounded-[2rem] sm:rounded-[3rem] shadow-sm border border-slate-100 group hover:border-primary transition-all">
+            <div className="flex justify-between items-center mb-4 sm:mb-6">
+               <div className={`p-3 sm:p-4 bg-slate-50 rounded-2xl ${stat.color} group-hover:bg-primary group-hover:text-white transition-all`}>{stat.icon}</div>
                <span className="bg-slate-50 text-[8px] font-black px-2 py-1 rounded-lg uppercase text-slate-300">Sync</span>
             </div>
             <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest subheading">{stat.label}</p>
-            <h3 className="text-2xl font-black text-slate-800 mt-1">{stat.value}</h3>
+            <h3 className="text-xl sm:text-2xl font-black text-slate-800 mt-1">{stat.value}</h3>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white p-12 rounded-[4rem] border border-slate-100 shadow-sm">
-           <h3 className="text-2xl font-heading text-slate-700 uppercase tracking-widest mb-10">Revenue Analytics</h3>
-           <div className="h-[350px]">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+        <div className="lg:col-span-2 bg-white p-6 sm:p-12 rounded-[2.5rem] sm:rounded-[4rem] border border-slate-100 shadow-sm overflow-hidden">
+           <h3 className="text-xl sm:text-2xl font-heading text-slate-700 uppercase tracking-widest mb-6 sm:mb-10">Revenue Analytics</h3>
+           <div className="h-[250px] sm:h-[350px]">
              <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={analytics.revData}>
                   <defs>
@@ -66,24 +66,24 @@ const Dashboard: React.FC<DashboardProps> = ({ patients, appointments, bills, lo
              </ResponsiveContainer>
            </div>
         </div>
-        <div className="bg-white p-12 rounded-[4rem] border border-slate-100 shadow-sm flex flex-col">
-           <h3 className="text-xl font-heading text-slate-700 uppercase tracking-widest mb-8 flex items-center gap-3">
+        <div className="bg-white p-6 sm:p-12 rounded-[2.5rem] sm:rounded-[4rem] border border-slate-100 shadow-sm flex flex-col max-h-[500px]">
+           <h3 className="text-lg sm:text-xl font-heading text-slate-700 uppercase tracking-widest mb-6 sm:mb-8 flex items-center gap-3">
               {ICONS.Notification} Live Queue
            </h3>
-           <div className="flex-1 overflow-y-auto space-y-4 custom-scrollbar">
+           <div className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 custom-scrollbar pr-1">
               {appointments.filter(a => a.status === 'Checked-in').map(appt => {
                 const p = patients.find(pat => pat.id === appt.patientId);
                 return (
-                  <div key={appt.id} className="p-5 bg-slate-50 rounded-3xl border border-slate-100 flex justify-between items-center group hover:bg-white hover:border-secondary transition-all">
-                     <div>
-                        <p className="text-xs font-black text-slate-800 uppercase tracking-tight">{p?.firstName} {p?.lastName}</p>
+                  <div key={appt.id} className="p-4 sm:p-5 bg-slate-50 rounded-2xl sm:rounded-3xl border border-slate-100 flex justify-between items-center group hover:bg-white hover:border-secondary transition-all">
+                     <div className="min-w-0 flex-1 mr-2">
+                        <p className="text-xs font-black text-slate-800 uppercase tracking-tight truncate">{p?.firstName} {p?.lastName}</p>
                         <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Wait Time: {appt.time}</p>
                      </div>
-                     <span className="w-2 h-2 bg-secondary rounded-full animate-pulse shadow-[0_0_8px_#29baed]"></span>
+                     <span className="flex-shrink-0 w-2 h-2 bg-secondary rounded-full animate-pulse shadow-[0_0_8px_#29baed]"></span>
                   </div>
                 );
               })}
-              {appointments.filter(a => a.status === 'Checked-in').length === 0 && <p className="text-center py-20 text-slate-300 italic text-sm font-bold">Waiting hall empty.</p>}
+              {appointments.filter(a => a.status === 'Checked-in').length === 0 && <p className="text-center py-10 text-slate-300 italic text-xs sm:text-sm font-bold">Waiting hall empty.</p>}
            </div>
         </div>
       </div>

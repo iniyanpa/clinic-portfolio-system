@@ -102,10 +102,10 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
     <div className="space-y-6 animate-in fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h2 className="text-3xl font-heading font-bold text-primary uppercase">OPD Schedule</h2>
-          <p className="subheading text-secondary font-bold text-[10px] tracking-widest uppercase">Clinical Calendar Control</p>
+          <h2 className="text-2xl sm:text-3xl font-heading font-bold text-primary uppercase">OPD Schedule</h2>
+          <p className="subheading text-secondary font-bold text-[9px] tracking-widest uppercase">Clinical Calendar Control</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="bg-primary text-white px-6 py-2.5 rounded-xl shadow-lg flex items-center gap-2 font-bold hover:bg-secondary transition-all text-[10px] uppercase">
+        <button onClick={() => setShowModal(true)} className="w-full sm:w-auto bg-primary text-white px-6 py-2.5 rounded-xl shadow-lg flex items-center justify-center gap-2 font-bold hover:bg-secondary transition-all text-[10px] uppercase">
           {ICONS.Plus} Create Appointment
         </button>
       </div>
@@ -119,7 +119,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
             <button 
               key={date}
               onClick={() => setSelectedDate(date)}
-              className={`px-6 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest whitespace-nowrap transition-all border ${
+              className={`px-5 py-2 rounded-xl text-[8px] font-bold uppercase tracking-widest whitespace-nowrap transition-all border ${
                 isActive ? 'bg-primary text-white border-primary shadow-md' : 'bg-white text-slate-400 border-slate-200 hover:border-primary'
               }`}
             >
@@ -129,86 +129,81 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
         })}
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 gap-3 sm:gap-4">
         {filteredAndSortedAppts.map(appt => {
           const patient = patients.find(p => p.id === appt.patientId);
           const doc = staff.find(s => s.id === appt.doctorId);
           return (
-            <div key={appt.id} className="p-6 bg-white border border-slate-200 rounded-[2rem] flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-md transition-all group">
-              <div className="flex items-center gap-6">
-                <div className="w-16 h-16 bg-slate-50 text-primary border border-slate-100 rounded-[1.5rem] flex flex-col items-center justify-center font-bold shadow-inner group-hover:bg-primary group-hover:text-white transition-colors">
-                  <span className="text-[8px] uppercase opacity-40">Time</span>
-                  <span className="text-lg leading-none">{appt.time}</span>
+            <div key={appt.id} className="p-5 sm:p-6 bg-white border border-slate-200 rounded-[1.5rem] sm:rounded-[2rem] flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 hover:shadow-md transition-all group">
+              <div className="flex items-center gap-4 sm:gap-6">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0 bg-slate-50 text-primary border border-slate-100 rounded-2xl flex flex-col items-center justify-center font-bold shadow-inner group-hover:bg-primary group-hover:text-white transition-colors">
+                  <span className="text-[7px] uppercase opacity-40">Time</span>
+                  <span className="text-base sm:text-lg leading-none">{appt.time}</span>
                 </div>
-                <div>
-                  <h4 className="text-xl font-bold text-slate-800 leading-tight">{patient?.firstName} {patient?.lastName}</h4>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Dr. {doc?.name} • {appt.department}</p>
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-lg font-bold text-slate-800 leading-tight truncate">{patient?.firstName} {patient?.lastName}</h4>
+                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1 truncate">Dr. {doc?.name} • {appt.department}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <span className={`px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest ${
+              <div className="flex items-center justify-between md:justify-end gap-3 sm:gap-4 mt-2 md:mt-0">
+                <span className={`px-3 py-1 rounded-lg text-[8px] font-bold uppercase tracking-widest ${
                   appt.status === 'Completed' ? 'bg-green-50 text-green-600' : 
                   appt.status === 'Checked-in' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'
                 }`}>
                   {appt.status}
                 </span>
                 {appt.status === 'Scheduled' && (
-                  <button onClick={() => setCheckingInApptId(appt.id)} className="bg-secondary text-white px-6 py-2.5 rounded-xl text-[9px] font-bold uppercase hover:bg-primary transition-all shadow-lg active:scale-95">Start Triage</button>
+                  <button onClick={() => setCheckingInApptId(appt.id)} className="bg-secondary text-white px-5 py-2 rounded-xl text-[8px] font-bold uppercase hover:bg-primary transition-all shadow-lg active:scale-95">Triage</button>
                 )}
               </div>
             </div>
           );
         })}
         {filteredAndSortedAppts.length === 0 && (
-          <div className="p-20 text-center bg-white border border-slate-100 rounded-[2.5rem]">
-            <p className="text-slate-300 font-bold italic text-sm">No clinical appointments scheduled for this date.</p>
+          <div className="p-16 text-center bg-white border border-slate-100 rounded-[2rem]">
+            <p className="text-slate-300 font-bold italic text-sm">No appointments scheduled.</p>
           </div>
         )}
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/20 backdrop-blur-md p-4">
-          <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in">
-            <div className="bg-primary p-6 text-white text-center shadow-lg">
-              <h3 className="text-lg font-bold font-heading uppercase tracking-widest">Book OPD Visit</h3>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-primary/20 backdrop-blur-md p-2 sm:p-4 overflow-y-auto">
+          <div className="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in my-auto">
+            <div className="bg-primary p-6 text-white text-center shadow-lg sticky top-0 z-10">
+              <h3 className="text-base font-bold font-heading uppercase tracking-widest">Book OPD Visit</h3>
             </div>
-            <form onSubmit={handleBooking} className="p-8 space-y-5">
+            <form onSubmit={handleBooking} className="p-6 sm:p-8 space-y-4 max-h-[70vh] overflow-y-auto">
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-slate-400 uppercase ml-2">Select Patient</label>
-                <select required className="w-full bg-slate-50 p-3 rounded-xl border border-slate-100 outline-none font-bold text-sm shadow-inner" value={newAppt.patientId} onChange={e => setNewAppt({...newAppt, patientId: e.target.value})}>
-                  <option value="">Choose Registry...</option>
-                  {patients.map(p => <option key={p.id} value={p.id}>{p.firstName} {p.lastName} (#{p.id})</option>)}
+                <label className="text-[8px] font-bold text-slate-400 uppercase ml-2">Patient</label>
+                <select required className="w-full bg-slate-50 p-2.5 rounded-xl border border-slate-100 outline-none font-bold text-xs shadow-inner" value={newAppt.patientId} onChange={e => setNewAppt({...newAppt, patientId: e.target.value})}>
+                  <option value="">Choose Patient...</option>
+                  {patients.map(p => <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-slate-400 uppercase ml-2">Date</label>
-                  <input required type="date" className="bg-slate-50 p-3 rounded-xl border border-slate-100 outline-none font-bold text-sm shadow-inner font-mono" value={newAppt.date} onChange={e => setNewAppt({...newAppt, date: e.target.value})} />
+                  <label className="text-[8px] font-bold text-slate-400 uppercase ml-2">Date</label>
+                  <input required type="date" className="w-full bg-slate-50 p-2.5 rounded-xl border border-slate-100 outline-none font-bold text-xs shadow-inner font-mono" value={newAppt.date} onChange={e => setNewAppt({...newAppt, date: e.target.value})} />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-slate-400 uppercase ml-2">Time</label>
-                  <input required type="time" className="bg-slate-50 p-3 rounded-xl border border-slate-100 outline-none font-bold text-sm shadow-inner font-mono" value={newAppt.time} onChange={e => setNewAppt({...newAppt, time: e.target.value})} />
+                  <label className="text-[8px] font-bold text-slate-400 uppercase ml-2">Time</label>
+                  <input required type="time" className="w-full bg-slate-50 p-2.5 rounded-xl border border-slate-100 outline-none font-bold text-xs shadow-inner font-mono" value={newAppt.time} onChange={e => setNewAppt({...newAppt, time: e.target.value})} />
                 </div>
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-slate-400 uppercase ml-2">Assign Physician</label>
-                <select required className="w-full bg-slate-50 p-3 rounded-xl border border-slate-100 outline-none font-bold text-sm shadow-inner" value={newAppt.doctorId} onChange={e => setNewAppt({...newAppt, doctorId: e.target.value})}>
-                  <option value="">Doctor Selection...</option>
-                  {doctors.map(d => <option key={d.id} value={d.id}>{d.name} ({d.specialization})</option>)}
+                <label className="text-[8px] font-bold text-slate-400 uppercase ml-2">Assign Doctor</label>
+                <select required className="w-full bg-slate-50 p-2.5 rounded-xl border border-slate-100 outline-none font-bold text-xs shadow-inner" value={newAppt.doctorId} onChange={e => setNewAppt({...newAppt, doctorId: e.target.value})}>
+                  <option value="">Selection...</option>
+                  {doctors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-slate-400 uppercase ml-2">Reason for OPD</label>
-                <input required className="w-full bg-slate-50 p-3 rounded-xl border border-slate-100 outline-none font-bold text-sm shadow-inner" placeholder="Complaint summary..." value={newAppt.reason} onChange={e => setNewAppt({...newAppt, reason: e.target.value})} />
+                <label className="text-[8px] font-bold text-slate-400 uppercase ml-2">Reason</label>
+                <input required className="w-full bg-slate-50 p-2.5 rounded-xl border border-slate-100 outline-none font-bold text-xs shadow-inner" placeholder="Complaint..." value={newAppt.reason} onChange={e => setNewAppt({...newAppt, reason: e.target.value})} />
               </div>
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold text-slate-400 uppercase ml-2">Attach Lab Record (Optional)</label>
-                <input type="file" className="w-full bg-slate-50 p-2 rounded-xl border border-slate-100 outline-none font-bold text-[10px] shadow-inner" onChange={handleFileChange} />
-                {newAppt.labRecordName && <p className="text-[8px] text-primary mt-1 truncate">Attached: {newAppt.labRecordName}</p>}
-              </div>
-              <div className="flex gap-4 pt-4">
+              <div className="flex flex-col sm:flex-row gap-3 pt-4 sticky bottom-0 bg-white">
                 <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-3 text-slate-400 font-bold uppercase tracking-widest text-[9px]">Discard</button>
-                <button type="submit" className="flex-1 py-3 bg-primary text-white rounded-xl font-bold shadow-xl hover:bg-secondary transition-all uppercase text-[9px] tracking-widest">Commit Slot</button>
+                <button type="submit" className="flex-1 py-3 bg-primary text-white rounded-xl font-bold shadow-xl hover:bg-secondary transition-all uppercase text-[9px] tracking-widest">Commit</button>
               </div>
             </form>
           </div>
@@ -216,49 +211,49 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
       )}
 
       {checkingInApptId && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-primary/20 backdrop-blur-md p-4">
-          <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10">
-             <div className="bg-secondary p-6 text-white text-center shadow-lg">
-                <h3 className="text-lg font-bold font-heading uppercase tracking-widest">Comprehensive Vitals Node</h3>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-primary/20 backdrop-blur-md p-2 sm:p-4 overflow-y-auto">
+          <div className="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10 my-auto">
+             <div className="bg-secondary p-5 text-white text-center shadow-lg sticky top-0 z-10">
+                <h3 className="text-base font-bold font-heading uppercase tracking-widest">Vitals Node</h3>
              </div>
-             <div className="p-8 space-y-4">
+             <div className="p-6 sm:p-8 space-y-4 max-h-[70vh] overflow-y-auto">
                 <div className="grid grid-cols-2 gap-3">
                    <div className="space-y-1">
-                      <label className="text-[8px] font-bold text-slate-400 uppercase ml-1">BP (mm Hg)</label>
-                      <input className="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="120/80" value={checkInVitals.bp} onChange={e => setCheckInVitals({...checkInVitals, bp: e.target.value})} />
+                      <label className="text-[7px] font-bold text-slate-400 uppercase ml-1">BP (mm Hg)</label>
+                      <input className="w-full bg-slate-50 p-2.5 rounded-xl font-bold outline-none border border-slate-100 text-xs shadow-inner" value={checkInVitals.bp} onChange={e => setCheckInVitals({...checkInVitals, bp: e.target.value})} />
                    </div>
                    <div className="space-y-1">
-                      <label className="text-[8px] font-bold text-slate-400 uppercase ml-1">Temp (°F)</label>
-                      <input className="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="98.6" value={checkInVitals.temp} onChange={e => setCheckInVitals({...checkInVitals, temp: e.target.value})} />
+                      <label className="text-[7px] font-bold text-slate-400 uppercase ml-1">Temp (°F)</label>
+                      <input className="w-full bg-slate-50 p-2.5 rounded-xl font-bold outline-none border border-slate-100 text-xs shadow-inner" value={checkInVitals.temp} onChange={e => setCheckInVitals({...checkInVitals, temp: e.target.value})} />
                    </div>
                    <div className="space-y-1">
-                      <label className="text-[8px] font-bold text-slate-400 uppercase ml-1">Pulse (BPM)</label>
-                      <input className="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="72" value={checkInVitals.pulse} onChange={e => setCheckInVitals({...checkInVitals, pulse: e.target.value})} />
+                      <label className="text-[7px] font-bold text-slate-400 uppercase ml-1">Pulse</label>
+                      <input className="w-full bg-slate-50 p-2.5 rounded-xl font-bold outline-none border border-slate-100 text-xs shadow-inner" value={checkInVitals.pulse} onChange={e => setCheckInVitals({...checkInVitals, pulse: e.target.value})} />
                    </div>
                    <div className="space-y-1">
-                      <label className="text-[8px] font-bold text-slate-400 uppercase ml-1">Resp. Rate</label>
-                      <input className="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="18" value={checkInVitals.rr} onChange={e => setCheckInVitals({...checkInVitals, rr: e.target.value})} />
+                      <label className="text-[7px] font-bold text-slate-400 uppercase ml-1">Resp Rate</label>
+                      <input className="w-full bg-slate-50 p-2.5 rounded-xl font-bold outline-none border border-slate-100 text-xs shadow-inner" value={checkInVitals.rr} onChange={e => setCheckInVitals({...checkInVitals, rr: e.target.value})} />
                    </div>
                    <div className="space-y-1">
-                      <label className="text-[8px] font-bold text-slate-400 uppercase ml-1">SpO2 (%)</label>
-                      <input className="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="98" value={checkInVitals.spo2} onChange={e => setCheckInVitals({...checkInVitals, spo2: e.target.value})} />
+                      <label className="text-[7px] font-bold text-slate-400 uppercase ml-1">SpO2 (%)</label>
+                      <input className="w-full bg-slate-50 p-2.5 rounded-xl font-bold outline-none border border-slate-100 text-xs shadow-inner" value={checkInVitals.spo2} onChange={e => setCheckInVitals({...checkInVitals, spo2: e.target.value})} />
                    </div>
                    <div className="space-y-1">
-                      <label className="text-[8px] font-bold text-slate-400 uppercase ml-1">Weight (kg)</label>
-                      <input className="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="70" value={checkInVitals.weight} onChange={e => setCheckInVitals({...checkInVitals, weight: e.target.value})} />
+                      <label className="text-[7px] font-bold text-slate-400 uppercase ml-1">Weight</label>
+                      <input className="w-full bg-slate-50 p-2.5 rounded-xl font-bold outline-none border border-slate-100 text-xs shadow-inner" value={checkInVitals.weight} onChange={e => setCheckInVitals({...checkInVitals, weight: e.target.value})} />
                    </div>
                    <div className="col-span-2 space-y-1">
-                      <label className="text-[8px] font-bold text-slate-400 uppercase ml-1">Sugar Level (mg/dL)</label>
-                      <input className="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="100 (Fasting/PP)" value={checkInVitals.sugar} onChange={e => setCheckInVitals({...checkInVitals, sugar: e.target.value})} />
+                      <label className="text-[7px] font-bold text-slate-400 uppercase ml-1">Sugar Level</label>
+                      <input className="w-full bg-slate-50 p-2.5 rounded-xl font-bold outline-none border border-slate-100 text-xs shadow-inner" value={checkInVitals.sugar} onChange={e => setCheckInVitals({...checkInVitals, sugar: e.target.value})} />
                    </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[8px] font-bold text-slate-400 uppercase ml-1">Clinical Remarks</label>
-                  <textarea rows={2} className="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="Brief symptoms summary..." value={checkInVitals.symptoms} onChange={e => setCheckInVitals({...checkInVitals, symptoms: e.target.value})} />
+                  <label className="text-[7px] font-bold text-slate-400 uppercase ml-1">Symptoms</label>
+                  <textarea rows={2} className="w-full bg-slate-50 p-2.5 rounded-xl font-bold outline-none border border-slate-100 text-xs shadow-inner" value={checkInVitals.symptoms} onChange={e => setCheckInVitals({...checkInVitals, symptoms: e.target.value})} />
                 </div>
-                <div className="flex gap-4 pt-2">
-                   <button onClick={() => setCheckingInApptId(null)} className="flex-1 py-3 text-slate-400 font-bold uppercase tracking-widest text-[9px]">Discard</button>
-                   <button onClick={handleCheckIn} className="flex-1 py-3 bg-primary text-white rounded-xl font-bold shadow-xl hover:bg-secondary transition-all uppercase text-[9px] tracking-widest">Commit to Doctor</button>
+                <div className="flex flex-col sm:flex-row gap-3 pt-4 sticky bottom-0 bg-white">
+                   <button onClick={() => setCheckingInApptId(null)} className="flex-1 py-3 text-slate-400 font-bold uppercase tracking-widest text-[8px]">Discard</button>
+                   <button onClick={handleCheckIn} className="flex-1 py-3 bg-primary text-white rounded-xl font-bold shadow-xl hover:bg-secondary transition-all uppercase text-[8px] tracking-widest">Push to Doctor</button>
                 </div>
              </div>
           </div>

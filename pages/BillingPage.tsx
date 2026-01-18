@@ -140,11 +140,10 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
             doc.text(`- Dose: ${med.dosage} | Duration: ${med.duration}`, 20, y + 5);
             doc.text(`- Instructions: ${med.instructions}`, 20, y + 10);
             y += 16;
-            // Page break check
             if (y > 260) { doc.addPage(); y = 20; }
         });
     } else {
-        doc.text('No medication prescribed for this session.', 20, y);
+        doc.text('No medication prescribed.', 20, y);
         y += 10;
     }
 
@@ -178,7 +177,7 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
     doc.text('Generated via HealFlow Cloud Systems.', 105, 290, { align: 'center' });
     
     if (action === 'download') {
-      doc.save(`ClinicalReport_${bill.id}_${patient.firstName}.pdf`);
+      doc.save(`Invoice_${bill.id}.pdf`);
     } else {
       const string = doc.output('bloburl');
       window.open(string, '_blank');
@@ -201,98 +200,100 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in">
-      <div className="flex justify-between items-end">
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h2 className="text-3xl font-heading font-bold text-primary">Billing & GST</h2>
-          <p className="subheading text-secondary font-bold text-[9px] tracking-widest uppercase">Visit Settlement Terminal</p>
+          <h2 className="text-2xl sm:text-3xl font-heading font-bold text-primary">Billing & GST</h2>
+          <p className="subheading text-secondary font-bold text-[8px] tracking-widest uppercase">Visit Settlement Terminal</p>
         </div>
-        <div className="bg-slate-100 p-1.5 rounded-xl flex gap-1 font-bold shadow-inner">
-          <button onClick={() => setActiveTab('pending')} className={`px-5 py-2 rounded-lg text-[9px] uppercase transition-all ${activeTab === 'pending' ? 'bg-primary text-white shadow-md' : 'text-slate-400'}`}>Pending ({pendingInvoices.length})</button>
-          <button onClick={() => setActiveTab('history')} className={`px-5 py-2 rounded-lg text-[9px] uppercase transition-all ${activeTab === 'history' ? 'bg-primary text-white shadow-md' : 'text-slate-400'}`}>Paid Records</button>
+        <div className="w-full sm:w-auto bg-slate-100 p-1 rounded-xl flex gap-1 font-bold shadow-inner">
+          <button onClick={() => setActiveTab('pending')} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-[8px] uppercase transition-all ${activeTab === 'pending' ? 'bg-primary text-white shadow-md' : 'text-slate-400'}`}>Pending ({pendingInvoices.length})</button>
+          <button onClick={() => setActiveTab('history')} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-[8px] uppercase transition-all ${activeTab === 'history' ? 'bg-primary text-white shadow-md' : 'text-slate-400'}`}>History</button>
         </div>
       </div>
 
       {activeTab === 'pending' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
            {pendingInvoices.map(appt => {
              const p = patients.find(pat => pat.id === appt.patientId);
              return (
-               <div key={appt.id} className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm space-y-6">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="text-xl font-bold text-slate-800">{p?.firstName} {p?.lastName}</h4>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Case: {appt.id}</p>
+               <div key={appt.id} className="bg-white p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] border border-slate-200 shadow-sm space-y-5 sm:space-y-6">
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-lg sm:text-xl font-bold text-slate-800 truncate">{p?.firstName} {p?.lastName}</h4>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">Case: {appt.id}</p>
                     </div>
-                    <div className="bg-green-50 text-green-600 px-3 py-1 rounded-full text-[9px] font-bold uppercase">Ready</div>
+                    <div className="bg-green-50 text-green-600 px-2.5 py-1 rounded-full text-[8px] font-bold uppercase flex-shrink-0">Ready</div>
                   </div>
 
-                  <div className="bg-slate-50 p-6 rounded-2xl space-y-2">
+                  <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl space-y-2">
                     {editingItems.map(item => (
-                      <div key={item.id} className="flex justify-between text-[11px] font-bold">
-                        <span className="text-slate-400 font-medium">{item.description}</span>
-                        <span className="text-slate-800 font-mono">₹{item.amount.toFixed(2)}</span>
+                      <div key={item.id} className="flex justify-between text-[10px] font-bold">
+                        <span className="text-slate-400 font-medium truncate mr-2">{item.description}</span>
+                        <span className="text-slate-800 font-mono flex-shrink-0">₹{item.amount.toFixed(2)}</span>
                       </div>
                     ))}
-                    <div className="pt-4 mt-2 border-t border-slate-200 flex justify-between items-center">
-                      <span className="text-primary font-heading text-lg">Invoice Total</span>
-                      <span className="text-primary font-black text-2xl font-mono">₹{editingItems.reduce((s,i) => s + i.amount, 0).toFixed(2)}</span>
+                    <div className="pt-3 mt-2 border-t border-slate-200 flex justify-between items-center">
+                      <span className="text-primary font-heading text-base">Total</span>
+                      <span className="text-primary font-black text-xl sm:text-2xl font-mono">₹{editingItems.reduce((s,i) => s + i.amount, 0).toFixed(2)}</span>
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <label className="text-[9px] font-bold text-slate-400 uppercase ml-2 block">Settlement Method</label>
+                  <div className="space-y-2.5">
+                    <label className="text-[8px] font-bold text-slate-400 uppercase ml-2 block">Method</label>
                     <div className="grid grid-cols-3 gap-2">
                       {['UPI', 'Cash', 'Card'].map(m => (
-                        <button key={m} onClick={() => setSelectedPayment(m as any)} className={`py-3 rounded-xl text-[9px] font-bold uppercase transition-all ${selectedPayment === m ? 'bg-secondary text-white' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}>{m}</button>
+                        <button key={m} onClick={() => setSelectedPayment(m as any)} className={`py-2.5 rounded-xl text-[8px] font-bold uppercase transition-all ${selectedPayment === m ? 'bg-secondary text-white' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}>{m}</button>
                       ))}
                     </div>
                   </div>
 
-                  <button onClick={() => processPayment(appt)} className="w-full py-4 bg-primary text-white rounded-2xl font-bold font-heading text-lg shadow-xl hover:bg-secondary transition-all uppercase text-xs">Settle & Preview Report</button>
+                  <button onClick={() => processPayment(appt)} className="w-full py-4 bg-primary text-white rounded-2xl font-bold font-heading text-base shadow-xl hover:bg-secondary transition-all uppercase text-[10px]">Settle & Report</button>
                </div>
              )
            })}
-           {pendingInvoices.length === 0 && <p className="lg:col-span-2 text-center py-20 text-slate-300 font-bold italic">No pending bills in queue.</p>}
+           {pendingInvoices.length === 0 && <p className="lg:col-span-2 text-center py-16 text-slate-300 font-bold italic text-sm">No pending bills.</p>}
         </div>
       ) : (
         <div className="bg-white rounded-[1.5rem] border border-slate-200 overflow-hidden shadow-sm">
-           <table className="w-full text-left">
-              <thead className="bg-slate-50 border-b border-slate-100">
-                 <tr>
-                    <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest">Inv #</th>
-                    <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest">Patient Name</th>
-                    <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Amount</th>
-                    <th className="px-6 py-4 text-right text-[9px] font-bold text-slate-400 uppercase tracking-widest">Actions</th>
-                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                 {bills.sort((a,b) => b.id.localeCompare(a.id)).map(bill => (
-                    <tr key={bill.id} className="hover:bg-slate-50 transition-colors">
-                       <td className="px-6 py-4 font-mono font-bold text-primary text-[11px]">#{bill.id.split('-')[1]}</td>
-                       <td className="px-6 py-4">
-                          <p className="font-bold text-slate-800 text-sm">{patients.find(p => p.id === bill.patientId)?.firstName} {patients.find(p => p.id === bill.patientId)?.lastName}</p>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase">{bill.date} • {bill.paymentMethod}</p>
-                       </td>
-                       <td className="px-6 py-4 font-bold text-slate-700 text-center font-mono text-[11px]">₹{bill.total.toFixed(2)}</td>
-                       <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-3">
-                            <button onClick={() => {
-                              const p = patients.find(pat => pat.id === bill.patientId);
-                              const a = appointments.find(ap => ap.id === bill.appointmentId);
-                              if (p && a) generatePDF(p, a, bill, 'preview');
-                            }} className="text-secondary font-bold hover:underline text-[9px] uppercase tracking-widest">Preview</button>
-                            <button onClick={() => {
-                              const p = patients.find(pat => pat.id === bill.patientId);
-                              const a = appointments.find(ap => ap.id === bill.appointmentId);
-                              if (p && a) generatePDF(p, a, bill, 'download');
-                            }} className="text-primary font-bold hover:underline text-[9px] uppercase tracking-widest">Download</button>
-                          </div>
-                       </td>
-                    </tr>
-                 ))}
-              </tbody>
-           </table>
+           <div className="overflow-x-auto custom-scrollbar">
+             <table className="w-full text-left min-w-[500px]">
+                <thead className="bg-slate-50 border-b border-slate-100">
+                   <tr>
+                      <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest">Inv #</th>
+                      <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest">Patient</th>
+                      <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Amount</th>
+                      <th className="px-6 py-4 text-right text-[9px] font-bold text-slate-400 uppercase tracking-widest">Actions</th>
+                   </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                   {bills.sort((a,b) => b.id.localeCompare(a.id)).map(bill => (
+                      <tr key={bill.id} className="hover:bg-slate-50 transition-colors">
+                         <td className="px-6 py-4 font-mono font-bold text-primary text-[10px]">#{bill.id.split('-')[1]}</td>
+                         <td className="px-6 py-4">
+                            <p className="font-bold text-slate-800 text-xs sm:text-sm">{patients.find(p => p.id === bill.patientId)?.firstName} {patients.find(p => p.id === bill.patientId)?.lastName}</p>
+                            <p className="text-[8px] font-bold text-slate-400 uppercase">{bill.date} • {bill.paymentMethod}</p>
+                         </td>
+                         <td className="px-6 py-4 font-bold text-slate-700 text-center font-mono text-[10px]">₹{bill.total.toFixed(2)}</td>
+                         <td className="px-6 py-4 text-right">
+                            <div className="flex justify-end gap-2 sm:gap-3">
+                              <button onClick={() => {
+                                const p = patients.find(pat => pat.id === bill.patientId);
+                                const a = appointments.find(ap => ap.id === bill.appointmentId);
+                                if (p && a) generatePDF(p, a, bill, 'preview');
+                              }} className="text-secondary font-bold hover:underline text-[8px] uppercase tracking-widest">View</button>
+                              <button onClick={() => {
+                                const p = patients.find(pat => pat.id === bill.patientId);
+                                const a = appointments.find(ap => ap.id === bill.appointmentId);
+                                if (p && a) generatePDF(p, a, bill, 'download');
+                              }} className="text-primary font-bold hover:underline text-[8px] uppercase tracking-widest">Save</button>
+                            </div>
+                         </td>
+                      </tr>
+                   ))}
+                </tbody>
+             </table>
+           </div>
         </div>
       )}
     </div>
