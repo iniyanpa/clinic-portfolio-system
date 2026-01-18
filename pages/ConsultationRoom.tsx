@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { onSnapshot, query, where, getDocs } from "firebase/firestore";
 import { GoogleGenAI } from "@google/genai";
 import { ICONS } from '../constants';
-// Added User type to imports from types.ts
 import { Patient, Appointment, MedicalRecord, Prescription, User } from '../types';
 import { clinicalCollections } from '../firebase';
 
@@ -10,7 +9,6 @@ interface ConsultationRoomProps {
   patients: Patient[];
   appointments: Appointment[];
   clinicName: string;
-  // Added currentUser prop definition
   currentUser: User | null;
   finalizeConsultation: (record: MedicalRecord, prescription: Prescription) => void;
 }
@@ -20,6 +18,7 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
   const [aiLoading, setAiLoading] = useState(false);
   const [aiResponse, setAiResponse] = useState<string | null>(null);
   
+  // Updated: Automatically calculates a date 7 days in the future
   const getDefaultFollowUp = () => {
     const d = new Date();
     d.setDate(d.getDate() + 7);
@@ -35,18 +34,25 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
   const currentAppt = appointments.find(a => a.id === activeId);
   const currentPat = patients.find(p => p.id === currentAppt?.patientId);
 
+  // Added: Reset follow-up date whenever a new consultation is started
+  useEffect(() => {
+    if (activeId) {
+      setNotes(n => ({ ...n, followUpDate: getDefaultFollowUp() }));
+    }
+  }, [activeId]);
+
   const handleFinalize = () => {
     if (!activeId || !currentPat || !currentAppt) return;
     const recordId = `REC-${Date.now()}`;
     const record: MedicalRecord = {
       id: recordId, tenantId: currentPat.tenantId,
       appointmentId: activeId, patientId: currentPat.id,
-      // Fixed: Now using the currentUser prop passed from the parent component
       doctorId: currentUser?.id || '1', date: new Date().toISOString(),
       diagnosis: notes.diagnosis || "General Consult",
       symptoms: currentAppt.initialSymptoms || "Nil",
       vitals: { ...currentAppt.vitals } as any,
-      notes: notes.remarks || "", followUpDate: notes.followUpDate,
+      notes: notes.remarks || "", 
+      followUpDate: notes.followUpDate, // Uses the auto-calculated or modified date
       aiInsights: aiResponse || undefined
     };
 
@@ -79,26 +85,34 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
     return (
       <div className="space-y-10 animate-in fade-in">
         <div>
-          <h2 className="text-4xl font-heading font-bold text-primary">Doctor's Consultation Room</h2>
-          <p className="text-slate-400 font-bold uppercase tracking-widest text-xs mt-1">Live Clinical Sessions</p>
+          <h2 className="text-4xl font-heading font-bold text-primary">Doctor's Desk</h2>
+          <p className="text-slate-400 font-bold uppercase tracking-widest text-xs mt-1">Live Consultations</p>
         </div>
-        <div className="bg-white rounded-[3rem] p-12 text-center border border-slate-200">
-          {appointments.filter(a => a.status === 'Checked-in').map(appt => {
-            const p = patients.find(pat => pat.id === appt.patientId);
-            return (
-              <div key={appt.id} className="flex items-center justify-between py-6 border-b border-slate-100 last:border-none">
-                <div className="flex items-center gap-6 text-left">
-                  <div className="w-16 h-16 bg-primary text-white rounded-2xl flex items-center justify-center font-bold text-lg">{appt.time}</div>
-                  <div>
-                    <h4 className="text-xl font-bold text-slate-800">{p?.firstName} {p?.lastName}</h4>
-                    <p className="text-xs font-bold text-secondary uppercase tracking-widest">{appt.reason}</p>
+        <div className="bg-white rounded-[3rem] p-16 text-center border border-slate-200 shadow-sm">
+          <div className="max-w-xl mx-auto space-y-8">
+            <h3 className="text-2xl font-bold text-slate-700">Patients in Queue</h3>
+            {appointments.filter(a => a.status === 'Checked-in').map(appt => {
+              const p = patients.find(pat => pat.id === appt.patientId);
+              return (
+                <div key={appt.id} className="flex items-center justify-between py-6 border-b border-slate-100 last:border-none hover:bg-slate-50 p-6 rounded-2xl transition-all">
+                  <div className="flex items-center gap-6 text-left">
+                    <div className="w-16 h-16 bg-primary text-white rounded-2xl flex items-center justify-center font-bold text-lg shadow-lg">{appt.time}</div>
+                    <div>
+                      <h4 className="text-xl font-bold text-slate-800">{p?.firstName} {p?.lastName}</h4>
+                      <p className="text-xs font-bold text-secondary uppercase tracking-widest">{appt.reason}</p>
+                    </div>
                   </div>
+                  <button onClick={() => setActiveId(appt.id)} className="px-10 py-4 bg-secondary text-white font-bold rounded-2xl hover:bg-primary transition-all shadow-xl">Attend Patient</button>
                 </div>
-                <button onClick={() => setActiveId(appt.id)} className="px-10 py-3 bg-secondary text-white font-bold rounded-xl hover:bg-primary transition-all">Start Consultation</button>
+              );
+            })}
+            {appointments.filter(a => a.status === 'Checked-in').length === 0 && (
+              <div className="py-20 space-y-4">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-300">{ICONS.Patients}</div>
+                <p className="text-slate-300 italic font-bold">No patients waiting currently.</p>
               </div>
-            );
-          })}
-          {appointments.filter(a => a.status === 'Checked-in').length === 0 && <p className="py-20 text-slate-300 italic font-bold">Waiting hall is currently empty.</p>}
+            )}
+          </div>
         </div>
       </div>
     );
@@ -106,57 +120,70 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
 
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-10">
-      <div className="bg-primary p-10 rounded-[3rem] text-white flex justify-between items-center shadow-xl">
-        <div className="flex items-center gap-8">
-           <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-[2rem] flex items-center justify-center text-3xl font-bold font-heading">{currentPat?.firstName[0]}</div>
+      <div className="bg-primary p-12 rounded-[4rem] text-white flex justify-between items-center shadow-2xl relative overflow-hidden">
+        <div className="flex items-center gap-10 relative z-10">
+           <div className="w-24 h-24 bg-white/10 backdrop-blur-xl rounded-[2.5rem] flex items-center justify-center text-4xl font-black font-heading border border-white/20">{currentPat?.firstName[0]}</div>
            <div>
-             <h3 className="text-3xl font-heading font-bold uppercase">{currentPat?.firstName} {currentPat?.lastName}</h3>
-             <p className="font-bold text-secondary uppercase tracking-widest text-sm mt-1">{currentPat?.id} • {currentPat?.gender}</p>
+             <h3 className="text-4xl font-heading font-bold uppercase tracking-tight">{currentPat?.firstName} {currentPat?.lastName}</h3>
+             <p className="font-bold text-secondary uppercase tracking-[0.3em] text-sm mt-2">{currentPat?.id} • {currentPat?.gender} • {currentPat?.bloodGroup}</p>
            </div>
         </div>
-        <button onClick={() => setActiveId(null)} className="text-4xl hover:text-red-400 transition-colors">×</button>
+        <button onClick={() => setActiveId(null)} className="text-white/30 hover:text-white text-5xl transition-colors relative z-10 font-light">×</button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="bg-white p-8 rounded-[3rem] border border-slate-200 shadow-sm h-fit space-y-6">
-           <h4 className="text-xl font-bold text-slate-700 border-b pb-4 mb-4">Patient Vitals</h4>
-           {Object.entries(currentAppt.vitals || {}).map(([key, val]) => (
-             <div key={key} className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{key}</span>
-                <span className="font-bold text-primary">{val as string}</span>
-             </div>
-           ))}
-           <div className="bg-orange-50 p-6 rounded-2xl border border-orange-100">
-              <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2">Primary Complaints</p>
-              <p className="font-bold text-slate-700 italic">"{currentAppt.initialSymptoms}"</p>
+        <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm h-fit space-y-8">
+           <h4 className="text-2xl font-bold text-slate-700 border-b border-slate-100 pb-4">Triage Vitals</h4>
+           <div className="grid grid-cols-2 gap-4">
+             {Object.entries(currentAppt.vitals || {}).map(([key, val]) => (
+               <div key={key} className="bg-slate-50 p-5 rounded-3xl border border-slate-100 flex flex-col gap-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{key}</span>
+                  <span className="font-bold text-primary text-lg">{val as string}</span>
+               </div>
+             ))}
+           </div>
+           <div className="bg-orange-50 p-8 rounded-[2rem] border border-orange-100 shadow-inner">
+              <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-3">Front-Desk Notes</p>
+              <p className="font-bold text-slate-700 leading-relaxed italic">"{currentAppt.initialSymptoms || 'No primary symptoms noted.'}"</p>
            </div>
         </div>
 
         <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm space-y-8">
+          <div className="bg-white p-12 rounded-[4rem] border border-slate-200 shadow-sm space-y-10">
              <div className="space-y-4">
-               <label className="text-sm font-bold text-primary uppercase tracking-widest block">Diagnosis & Findings</label>
-               <textarea rows={2} className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-slate-800 focus:ring-4 ring-primary/5" placeholder="Enter clinical diagnosis..." value={notes.diagnosis} onChange={e => setNotes({...notes, diagnosis: e.target.value})} />
+               <label className="text-sm font-bold text-primary uppercase tracking-widest block ml-2">Clinical Diagnosis</label>
+               <textarea rows={2} className="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] outline-none font-bold text-slate-800 text-lg focus:ring-4 ring-primary/5 shadow-inner" placeholder="Enter findings or observations..." value={notes.diagnosis} onChange={e => setNotes({...notes, diagnosis: e.target.value})} />
              </div>
              
-             <div className="space-y-4">
-               <div className="flex justify-between items-center">
-                 <label className="text-sm font-bold text-primary uppercase tracking-widest">Prescription (Rx Medicines)</label>
-                 <button onClick={() => setMedicines([...medicines, { name: '', duration: '5', instructions: 'After Food', freq: { morning: true, afternoon: false, evening: false, night: true } }])} className="text-xs font-bold text-secondary uppercase hover:underline">+ Add Medicine</button>
+             <div className="space-y-6">
+               <div className="flex justify-between items-center ml-2">
+                 <label className="text-sm font-bold text-primary uppercase tracking-widest">Medication Order (Rx)</label>
+                 <button onClick={() => setMedicines([...medicines, { name: '', duration: '5', instructions: 'After Food', freq: { morning: true, afternoon: false, evening: false, night: true } }])} className="text-xs font-bold text-secondary uppercase hover:underline flex items-center gap-2">
+                   {ICONS.Plus} Add Medicine
+                 </button>
                </div>
-               <div className="space-y-4">
+               <div className="space-y-6">
                  {medicines.map((m, idx) => (
-                   <div key={idx} className="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-4 relative">
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        <input className="bg-white p-3 rounded-xl border border-slate-200 font-bold text-sm flex-1" placeholder="Medicine Name" value={m.name} onChange={e => updateMed(idx, { name: e.target.value })} />
-                        <input type="number" className="bg-white p-3 rounded-xl border border-slate-200 font-bold text-sm w-full" placeholder="Days" value={m.duration} onChange={e => updateMed(idx, { duration: e.target.value })} />
-                        <select className="bg-white p-3 rounded-xl border border-slate-200 font-bold text-xs" value={m.instructions} onChange={e => updateMed(idx, { instructions: e.target.value })}>
-                          <option value="After Food">After Food</option>
-                          <option value="Before Food">Before Food</option>
-                          <option value="Empty Stomach">Empty Stomach</option>
-                        </select>
+                   <div key={idx} className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-200 space-y-6 relative group hover:border-secondary transition-all shadow-sm">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="lg:col-span-2">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block ml-2">Medicine Name</label>
+                          <input className="w-full bg-white p-4 rounded-2xl border border-slate-200 font-bold text-lg outline-none focus:border-secondary" placeholder="e.g. Tab. Paracetamol" value={m.name} onChange={e => updateMed(idx, { name: e.target.value })} />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block ml-2">Days</label>
+                          <input type="number" className="w-full bg-white p-4 rounded-2xl border border-slate-200 font-bold text-lg outline-none focus:border-secondary" placeholder="Qty" value={m.duration} onChange={e => updateMed(idx, { duration: e.target.value })} />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block ml-2">When</label>
+                          <select className="w-full bg-white p-4 rounded-2xl border border-slate-200 font-bold text-sm outline-none" value={m.instructions} onChange={e => updateMed(idx, { instructions: e.target.value })}>
+                            <option value="After Food">After Food</option>
+                            <option value="Before Food">Before Food</option>
+                            <option value="Empty Stomach">Empty Stomach</option>
+                          </select>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-3">
                         {['morning', 'afternoon', 'evening', 'night'].map(t => (
                           <button 
                             key={t} 
@@ -165,25 +192,26 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
                               copy[idx].freq[t as keyof typeof m.freq] = !copy[idx].freq[t as keyof typeof m.freq];
                               setMedicines(copy);
                             }} 
-                            className={`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase ${m.freq[t as keyof typeof m.freq] ? 'bg-primary text-white' : 'bg-white text-slate-300'}`}
+                            className={`flex-1 py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-sm transition-all ${m.freq[t as keyof typeof m.freq] ? 'bg-primary text-white scale-105' : 'bg-white text-slate-300'}`}
                           >
-                            {t[0]}
+                            {t}
                           </button>
                         ))}
                       </div>
-                      {medicines.length > 1 && <button onClick={() => setMedicines(medicines.filter((_, i) => i !== idx))} className="absolute top-2 right-2 text-slate-300 hover:text-red-500 font-bold">×</button>}
+                      {medicines.length > 1 && <button onClick={() => setMedicines(medicines.filter((_, i) => i !== idx))} className="absolute top-4 right-4 text-slate-200 hover:text-red-500 font-bold text-2xl transition-colors">×</button>}
                    </div>
                  ))}
                </div>
              </div>
 
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-slate-100">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 pt-10 border-t border-slate-100">
                <div className="space-y-4">
-                  <label className="text-sm font-bold text-orange-600 uppercase tracking-widest block">Next Review Visit (Follow-up)</label>
-                  <input type="date" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-slate-800" value={notes.followUpDate} onChange={e => setNotes({...notes, followUpDate: e.target.value})} />
+                  <label className="text-sm font-bold text-orange-600 uppercase tracking-widest block ml-2">Next Follow-up Visit</label>
+                  <input type="date" className="w-full p-5 bg-slate-50 border border-slate-200 rounded-[2rem] outline-none font-bold text-slate-800 text-lg shadow-inner" value={notes.followUpDate} onChange={e => setNotes({...notes, followUpDate: e.target.value})} />
+                  <p className="text-[10px] font-bold text-slate-300 uppercase ml-2 tracking-widest">(Defaulted to +7 days)</p>
                </div>
                <div className="flex items-end">
-                  <button onClick={handleFinalize} className="w-full py-5 bg-primary text-white rounded-2xl font-bold font-heading text-xl shadow-xl hover:bg-secondary transition-all active:scale-95">Complete Consultation</button>
+                  <button onClick={handleFinalize} className="w-full py-6 bg-primary text-white rounded-[2rem] font-bold font-heading text-2xl shadow-2xl hover:bg-secondary hover:scale-[1.02] active:scale-95 transition-all">Complete & Print Rx</button>
                </div>
              </div>
           </div>
