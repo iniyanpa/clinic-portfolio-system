@@ -1,16 +1,25 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ICONS } from '../constants';
-import { Prescription, Patient } from '../types';
+import { Prescription, Patient, Appointment } from '../types';
 
 interface PharmacyPageProps {
   prescriptions: Prescription[];
   patients: Patient[];
+  appointments: Appointment[];
   clinicName: string;
   onDispense: (pxId: string) => void;
 }
 
-const PharmacyPage: React.FC<PharmacyPageProps> = ({ prescriptions, patients, clinicName, onDispense }) => {
-  const sortedPrescriptions = [...prescriptions].sort((a, b) => b.id.localeCompare(a.id));
+const PharmacyPage: React.FC<PharmacyPageProps> = ({ prescriptions, patients, appointments, clinicName, onDispense }) => {
+  const pharmacyQueue = useMemo(() => {
+    return prescriptions.map(px => {
+      const appt = appointments.find(a => a.id === px.appointmentId);
+      return {
+        ...px,
+        time: appt?.time || '00:00'
+      };
+    }).sort((a, b) => b.time.localeCompare(a.time));
+  }, [prescriptions, appointments]);
 
   return (
     <div className="space-y-6 animate-in fade-in">
@@ -22,12 +31,12 @@ const PharmacyPage: React.FC<PharmacyPageProps> = ({ prescriptions, patients, cl
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        {sortedPrescriptions.length === 0 ? (
+        {pharmacyQueue.length === 0 ? (
           <div className="bg-white p-20 rounded-[2.5rem] text-center border-2 border-dashed border-slate-100">
             <p className="text-slate-300 font-bold italic text-sm">No medication orders pending in the queue.</p>
           </div>
         ) : (
-          sortedPrescriptions.map((px) => {
+          pharmacyQueue.map((px) => {
             const p = patients.find(pat => pat.id === px.patientId);
             return (
               <div key={px.id} className={`bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden transition-all ${px.status === 'Dispensed' ? 'opacity-60 grayscale' : 'hover:border-secondary shadow-md'}`}>
@@ -35,6 +44,9 @@ const PharmacyPage: React.FC<PharmacyPageProps> = ({ prescriptions, patients, cl
                   <div className={`p-8 md:w-56 flex flex-col justify-center items-center text-center gap-1.5 ${px.status === 'Dispensed' ? 'bg-slate-100' : 'bg-primary text-white'}`}>
                     <span className="text-[9px] font-bold uppercase tracking-widest opacity-60">Rx Terminal</span>
                     <span className="font-mono text-xl font-bold">#{px.id.slice(-5)}</span>
+                    <div className="mt-2 text-[10px] font-black font-mono bg-white/10 px-3 py-1 rounded-lg">
+                      TIME: {px.time}
+                    </div>
                     <span className={`px-4 py-1.5 rounded-lg text-[8px] font-bold uppercase tracking-widest mt-2 ${px.status === 'Dispensed' ? 'bg-green-100 text-green-700' : 'bg-white/20 text-white'}`}>
                       {px.status}
                     </span>
@@ -73,7 +85,7 @@ const PharmacyPage: React.FC<PharmacyPageProps> = ({ prescriptions, patients, cl
                           }}
                           className="bg-secondary text-white px-8 py-3 rounded-xl font-bold uppercase text-[9px] tracking-widest hover:bg-primary transition-all shadow-xl active:scale-95"
                         >
-                          Settle Dispensing
+                          Confirm Dispensing
                         </button>
                       </div>
                     )}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { onSnapshot, doc, setDoc, updateDoc, query, where, getDocs, addDoc, limit } from "firebase/firestore";
 import { db, clinicalCollections } from './firebase';
 import { UserRole, User, Patient, Appointment, MedicalRecord, Bill, ApptStatus, Prescription, SubscriptionPlan, Tenant } from './types';
-import { ICONS } from './constants';
+import { ICONS } from '../constants';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Patients from './pages/Patients';
@@ -303,7 +303,7 @@ const App: React.FC = () => {
           {activeTab === 'records' && <ConsultationRoom patients={patients} appointments={appointments} records={records} clinicName={clinicName} currentUser={currentUser} finalizeConsultation={finalizeConsultation} />}
           {activeTab === 'billing' && <BillingPage patients={patients} appointments={appointments} records={records} prescriptions={prescriptions} bills={bills} clinicName={clinicName} addBill={addBill} tenantSettings={tenantSettings} />}
           {activeTab === 'staff' && <StaffManagement staff={staff} addStaff={()=>{}} updateStaff={()=>{}} />}
-          {activeTab === 'pharmacy' && <PharmacyPage prescriptions={prescriptions} patients={patients} clinicName={clinicName} onDispense={onDispense} />}
+          {activeTab === 'pharmacy' && <PharmacyPage prescriptions={prescriptions} patients={patients} appointments={appointments} clinicName={clinicName} onDispense={onDispense} />}
           {activeTab === 'settings' && <SettingsPage tenantId={currentUser?.tenantId} currentSettings={tenantSettings} />}
         </div>
       </main>

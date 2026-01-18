@@ -15,7 +15,9 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
   const [checkingInApptId, setCheckingInApptId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   
-  const [checkInVitals, setCheckInVitals] = useState({ bp: '', temp: '', pulse: '', weight: '', spo2: '', sugar: '', symptoms: '' });
+  const [checkInVitals, setCheckInVitals] = useState({ 
+    bp: '', temp: '', pulse: '', weight: '', spo2: '', sugar: '', rr: '', symptoms: '' 
+  });
   
   const getCurrentTime = () => {
     const now = new Date();
@@ -80,18 +82,19 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
           pulse: checkInVitals.pulse || 'N/A',
           weight: checkInVitals.weight || 'N/A',
           spo2: checkInVitals.spo2 || 'N/A',
-          sugarLevel: checkInVitals.sugar || 'N/A'
+          sugarLevel: checkInVitals.sugar || 'N/A',
+          rr: checkInVitals.rr || 'N/A'
         },
         initialSymptoms: checkInVitals.symptoms || 'None recorded'
       });
       setCheckingInApptId(null);
-      setCheckInVitals({ bp: '', temp: '', pulse: '', weight: '', spo2: '', sugar: '', symptoms: '' });
+      setCheckInVitals({ bp: '', temp: '', pulse: '', weight: '', spo2: '', sugar: '', rr: '', symptoms: '' });
     }
   };
 
   const dateTabs = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
-    d.setDate(d.getDate() + (i - 1)); // Show yesterday, today, and next 5 days
+    d.setDate(d.getDate() + (i - 1));
     return d.toISOString().split('T')[0];
   });
 
@@ -216,21 +219,46 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-primary/20 backdrop-blur-md p-4">
           <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10">
              <div className="bg-secondary p-6 text-white text-center shadow-lg">
-                <h3 className="text-lg font-bold font-heading uppercase tracking-widest">Capture Node Vitals</h3>
+                <h3 className="text-lg font-bold font-heading uppercase tracking-widest">Comprehensive Vitals Node</h3>
              </div>
-             <div className="p-8 space-y-5">
+             <div className="p-8 space-y-4">
                 <div className="grid grid-cols-2 gap-3">
-                   <input className="bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="BP (120/80)" value={checkInVitals.bp} onChange={e => setCheckInVitals({...checkInVitals, bp: e.target.value})} />
-                   <input className="bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="Temp (°F)" value={checkInVitals.temp} onChange={e => setCheckInVitals({...checkInVitals, temp: e.target.value})} />
-                   <input className="bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="Pulse BPM" value={checkInVitals.pulse} onChange={e => setCheckInVitals({...checkInVitals, pulse: e.target.value})} />
-                   <input className="bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="Weight KG" value={checkInVitals.weight} onChange={e => setCheckInVitals({...checkInVitals, weight: e.target.value})} />
-                   <input className="bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="SpO2 %" value={checkInVitals.spo2} onChange={e => setCheckInVitals({...checkInVitals, spo2: e.target.value})} />
-                   <input className="bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="Sugar Level" value={checkInVitals.sugar} onChange={e => setCheckInVitals({...checkInVitals, sugar: e.target.value})} />
+                   <div className="space-y-1">
+                      <label className="text-[8px] font-bold text-slate-400 uppercase ml-1">BP (mm Hg)</label>
+                      <input className="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="120/80" value={checkInVitals.bp} onChange={e => setCheckInVitals({...checkInVitals, bp: e.target.value})} />
+                   </div>
+                   <div className="space-y-1">
+                      <label className="text-[8px] font-bold text-slate-400 uppercase ml-1">Temp (°F)</label>
+                      <input className="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="98.6" value={checkInVitals.temp} onChange={e => setCheckInVitals({...checkInVitals, temp: e.target.value})} />
+                   </div>
+                   <div className="space-y-1">
+                      <label className="text-[8px] font-bold text-slate-400 uppercase ml-1">Pulse (BPM)</label>
+                      <input className="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="72" value={checkInVitals.pulse} onChange={e => setCheckInVitals({...checkInVitals, pulse: e.target.value})} />
+                   </div>
+                   <div className="space-y-1">
+                      <label className="text-[8px] font-bold text-slate-400 uppercase ml-1">Resp. Rate</label>
+                      <input className="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="18" value={checkInVitals.rr} onChange={e => setCheckInVitals({...checkInVitals, rr: e.target.value})} />
+                   </div>
+                   <div className="space-y-1">
+                      <label className="text-[8px] font-bold text-slate-400 uppercase ml-1">SpO2 (%)</label>
+                      <input className="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="98" value={checkInVitals.spo2} onChange={e => setCheckInVitals({...checkInVitals, spo2: e.target.value})} />
+                   </div>
+                   <div className="space-y-1">
+                      <label className="text-[8px] font-bold text-slate-400 uppercase ml-1">Weight (kg)</label>
+                      <input className="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="70" value={checkInVitals.weight} onChange={e => setCheckInVitals({...checkInVitals, weight: e.target.value})} />
+                   </div>
+                   <div className="col-span-2 space-y-1">
+                      <label className="text-[8px] font-bold text-slate-400 uppercase ml-1">Sugar Level (mg/dL)</label>
+                      <input className="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="100 (Fasting/PP)" value={checkInVitals.sugar} onChange={e => setCheckInVitals({...checkInVitals, sugar: e.target.value})} />
+                   </div>
                 </div>
-                <textarea rows={3} className="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="Patient detailed complaints..." value={checkInVitals.symptoms} onChange={e => setCheckInVitals({...checkInVitals, symptoms: e.target.value})} />
+                <div className="space-y-1">
+                  <label className="text-[8px] font-bold text-slate-400 uppercase ml-1">Clinical Remarks</label>
+                  <textarea rows={2} className="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="Brief symptoms summary..." value={checkInVitals.symptoms} onChange={e => setCheckInVitals({...checkInVitals, symptoms: e.target.value})} />
+                </div>
                 <div className="flex gap-4 pt-2">
-                   <button onClick={() => setCheckingInApptId(null)} className="flex-1 py-3 text-slate-400 font-bold uppercase tracking-widest text-[9px]">Cancel</button>
-                   <button onClick={handleCheckIn} className="flex-1 py-3 bg-primary text-white rounded-xl font-bold shadow-xl hover:bg-secondary transition-all uppercase text-[9px] tracking-widest">Push to Doctor</button>
+                   <button onClick={() => setCheckingInApptId(null)} className="flex-1 py-3 text-slate-400 font-bold uppercase tracking-widest text-[9px]">Discard</button>
+                   <button onClick={handleCheckIn} className="flex-1 py-3 bg-primary text-white rounded-xl font-bold shadow-xl hover:bg-secondary transition-all uppercase text-[9px] tracking-widest">Commit to Doctor</button>
                 </div>
              </div>
           </div>
