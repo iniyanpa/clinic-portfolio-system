@@ -19,9 +19,9 @@ const Sidebar: React.FC<SidebarProps> = ({ user, tenantName, tenantLogo, activeT
     { id: 'patients', label: 'Patient Records', icon: ICONS.Patients, roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.RECEPTIONIST] },
     { id: 'appointments', label: 'OPD Schedule', icon: ICONS.Appointments, roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.RECEPTIONIST] },
     { id: 'records', label: "Doctor's Desk", icon: ICONS.Records, roles: [UserRole.DOCTOR, UserRole.ADMIN] },
-    { id: 'pharmacy', label: 'Pharmacy Management', icon: ICONS.Staff, roles: [UserRole.PHARMACIST, UserRole.ADMIN] },
+    { id: 'pharmacy', label: 'Pharmacy', icon: ICONS.Plus, roles: [UserRole.PHARMACIST, UserRole.ADMIN] },
     { id: 'billing', label: 'Billing & Payments', icon: ICONS.Billing, roles: [UserRole.ADMIN, UserRole.RECEPTIONIST] },
-    { id: 'staff', label: 'Staff Directory', icon: ICONS.Staff, roles: [UserRole.ADMIN] },
+    { id: 'staff', label: 'Staff Matrix', icon: ICONS.Staff, roles: [UserRole.ADMIN] },
     { id: 'settings', label: 'Clinic Settings', icon: ICONS.Settings, roles: [UserRole.ADMIN] },
   ];
 
@@ -37,31 +37,31 @@ const Sidebar: React.FC<SidebarProps> = ({ user, tenantName, tenantLogo, activeT
         >
           <div className="flex items-center gap-3">
             {tenantLogo ? (
-              <img src={tenantLogo} alt="Logo" className="w-10 h-10 rounded-lg object-cover bg-white p-1" />
+              <img src={tenantLogo} alt="Logo" className="w-10 h-10 rounded-lg object-cover bg-white p-1 shadow-inner" />
             ) : (
-              <div className="bg-white/10 p-2 rounded-lg text-secondary">{ICONS.Home}</div>
+              <div className="bg-white/10 p-2 rounded-lg text-secondary shadow-inner">{ICONS.Home}</div>
             )}
             <div className="overflow-hidden">
-              <h1 className="text-lg font-heading font-bold tracking-tight text-white uppercase truncate">{tenantName}</h1>
-              <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest mt-1 block">Role: {user.role}</span>
+              <h1 className="text-lg font-heading font-bold tracking-tight text-white uppercase truncate leading-tight">{tenantName}</h1>
+              <span className="text-[8px] font-bold text-white/50 uppercase tracking-[0.2em] mt-0.5 block">{user.role} TERMINAL</span>
             </div>
           </div>
         </div>
-        <nav className="flex-1 px-4 mt-6 space-y-1 overflow-y-auto custom-scrollbar">
+        <nav className="flex-1 px-4 mt-6 space-y-1.5 overflow-y-auto custom-scrollbar">
           {filteredMenu.map((item) => (
             <button 
               key={item.id} 
               onClick={() => { setActiveTab(item.id); setIsOpen(false); }} 
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === item.id ? 'bg-secondary text-white shadow-lg' : 'hover:bg-white/5 text-white/60 hover:text-white'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left ${activeTab === item.id ? 'bg-secondary text-white shadow-lg' : 'hover:bg-white/5 text-white/60 hover:text-white'}`}
             >
-              <div className="flex-shrink-0">{item.icon}</div>
-              <span className="font-bold text-[11px] tracking-wide text-left flex-1 truncate">{item.label}</span>
+              <div className="flex-shrink-0 opacity-80">{item.icon}</div>
+              <span className="font-bold text-[10px] tracking-widest uppercase truncate">{item.label}</span>
             </button>
           ))}
         </nav>
         <div className="p-6 border-t border-white/10">
-          <button onClick={onLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/40 hover:bg-red-500 hover:text-white transition-all font-bold text-[11px] tracking-wide">
-            {ICONS.Logout} <span>Logout Terminal</span>
+          <button onClick={onLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/40 hover:bg-red-500 hover:text-white transition-all font-bold text-[10px] tracking-widest uppercase">
+            {ICONS.Logout} <span>Logout</span>
           </button>
         </div>
       </div>
