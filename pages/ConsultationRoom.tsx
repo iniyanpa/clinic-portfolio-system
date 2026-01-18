@@ -1,19 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { onSnapshot, query, where, getDocs } from "firebase/firestore";
-import { GoogleGenAI } from "@google/genai";
+import React, { useState, useEffect, useMemo } from 'react';
 import { ICONS } from '../constants';
 import { Patient, Appointment, MedicalRecord, Prescription, User } from '../types';
-import { clinicalCollections } from '../firebase';
 
 interface ConsultationRoomProps {
   patients: Patient[];
   appointments: Appointment[];
+  records: MedicalRecord[];
   clinicName: string;
   currentUser: User | null;
   finalizeConsultation: (record: MedicalRecord, prescription: Prescription) => void;
 }
 
-const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointments, clinicName, currentUser, finalizeConsultation }) => {
+const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointments, records, clinicName, currentUser, finalizeConsultation }) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   
   const getDefaultFollowUp = () => {
@@ -30,6 +28,14 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
 
   const currentAppt = appointments.find(a => a.id === activeId);
   const currentPat = patients.find(p => p.id === currentAppt?.patientId);
+
+  // Filter medical history for the active patient
+  const patientHistory = useMemo(() => {
+    if (!currentPat) return [];
+    return records
+      .filter(r => r.patientId === currentPat.id)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [records, currentPat]);
 
   useEffect(() => {
     if (activeId) {
@@ -96,7 +102,7 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
                       <p className="text-xs font-bold text-secondary uppercase tracking-widest">{appt.reason}</p>
                     </div>
                   </div>
-                  <button onClick={() => setActiveId(appt.id)} className="px-10 py-4 bg-secondary text-white font-bold rounded-2xl hover:bg-primary transition-all shadow-xl">Attend</button>
+                  <button onClick={() => setActiveId(appt.id)} className="px-10 py-4 bg-secondary text-white font-bold rounded-2xl hover:bg-primary transition-all shadow-xl uppercase text-xs">Attend</button>
                 </div>
               );
             })}
@@ -127,7 +133,7 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm h-fit space-y-8">
-           <h4 className="text-2xl font-bold text-slate-700 border-b border-slate-100 pb-4">Vitals</h4>
+           <h4 className="text-2xl font-bold text-slate-700 border-b border-slate-100 pb-4">Current Vitals</h4>
            <div className="grid grid-cols-2 gap-4">
              {Object.entries(currentAppt.vitals || {}).map(([key, val]) => (
                <div key={key} className="bg-slate-50 p-5 rounded-3xl border border-slate-100 flex flex-col gap-1">
@@ -213,11 +219,59 @@ const ConsultationRoom: React.FC<ConsultationRoomProps> = ({ patients, appointme
                   <p className="text-[10px] font-bold text-slate-300 uppercase ml-2 tracking-widest">(Default: +7 Days)</p>
                </div>
                <div className="flex items-end">
-                  <button onClick={handleFinalize} className="w-full py-6 bg-primary text-white rounded-[2rem] font-bold font-heading text-2xl shadow-2xl hover:bg-secondary hover:scale-[1.02] transition-all">Complete Visit</button>
+                  <button onClick={handleFinalize} className="w-full py-6 bg-primary text-white rounded-[2rem] font-bold font-heading text-2xl shadow-2xl hover:bg-secondary hover:scale-[1.02] transition-all uppercase text-sm">Complete Visit</button>
                </div>
              </div>
           </div>
         </div>
+      </div>
+
+      {/* Patient History Section */}
+      <div className="bg-white p-12 rounded-[4rem] border border-slate-200 shadow-sm space-y-8 mt-12">
+        <div className="flex items-center gap-4 border-b border-slate-100 pb-4">
+          <div className="p-3 bg-secondary/10 text-secondary rounded-2xl">{ICONS.Records}</div>
+          <h3 className="text-2xl font-heading font-bold text-slate-700 uppercase">Patient Medical History</h3>
+        </div>
+        
+        {patientHistory.length === 0 ? (
+          <div className="py-20 text-center">
+            <p className="text-slate-300 font-bold italic">No previous clinical records found for this patient.</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {patientHistory.map((rec) => (
+              <div key={rec.id} className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-200 hover:border-secondary transition-all shadow-sm">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                  <div>
+                    <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] mb-1">{new Date(rec.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                    <h4 className="text-xl font-bold text-slate-800">Diagnosis: {rec.diagnosis}</h4>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="px-4 py-1.5 bg-white border border-slate-200 rounded-xl text-[9px] font-bold text-slate-400 uppercase">Consulted by: Dr. {currentUser?.name}</span>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-4">
+                    <h5 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Clinical Notes</h5>
+                    <p className="text-sm text-slate-600 leading-relaxed bg-white p-6 rounded-2xl border border-slate-100 shadow-inner italic">"{rec.notes || 'No specific notes recorded.'}"</p>
+                  </div>
+                  <div className="space-y-4">
+                    <h5 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Past Vitals</h5>
+                    <div className="grid grid-cols-3 gap-3">
+                      {Object.entries(rec.vitals || {}).map(([vKey, vVal]) => (
+                        <div key={vKey} className="bg-white p-3 rounded-xl border border-slate-100 flex flex-col items-center">
+                          <span className="text-[8px] font-bold text-slate-400 uppercase">{vKey}</span>
+                          <span className="text-xs font-bold text-slate-800">{vVal as string}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

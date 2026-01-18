@@ -33,7 +33,7 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
     return appointments.filter(appt => appt.status === 'Completed' && !bills.some(bill => bill.appointmentId === appt.id));
   }, [appointments, bills]);
 
-  const generatePDF = (patient: Patient, appt: Appointment, bill: Bill) => {
+  const generatePDF = (patient: Patient, appt: Appointment, bill: Bill, action: 'preview' | 'download' = 'preview') => {
     const doc = new jsPDF();
     const record = records.find(r => r.appointmentId === appt.id);
     const prescription = prescriptions.find(p => p.appointmentId === appt.id);
@@ -98,6 +98,8 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
         doc.text(`Temp: ${appt.vitals.temp || 'N/A'}`, 60, y);
         doc.text(`Pulse: ${appt.vitals.pulse || 'N/A'}`, 100, y);
         doc.text(`Weight: ${appt.vitals.weight || 'N/A'} kg`, 140, y);
+        y += 5;
+        doc.text(`SpO2: ${appt.vitals.spo2 || 'N/A'}% | Sugar: ${appt.vitals.sugarLevel || 'N/A'}`, 20, y);
     } else {
         doc.text('No vital statistics recorded for this visit.', 20, y);
     }
@@ -175,7 +177,12 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
     doc.text('This is a computer-generated medical record and tax invoice.', 105, 285, { align: 'center' });
     doc.text('Generated via HealFlow Cloud Systems.', 105, 290, { align: 'center' });
     
-    doc.save(`ClinicalReport_${bill.id}_${patient.firstName}.pdf`);
+    if (action === 'download') {
+      doc.save(`ClinicalReport_${bill.id}_${patient.firstName}.pdf`);
+    } else {
+      const string = doc.output('bloburl');
+      window.open(string, '_blank');
+    }
   };
 
   const processPayment = (appt: Appointment) => {
@@ -190,7 +197,7 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
       status: 'Paid', paymentMethod: selectedPayment
     };
     addBill(bill);
-    generatePDF(p, appt, bill);
+    generatePDF(p, appt, bill, 'preview');
   };
 
   return (
@@ -242,7 +249,7 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
                     </div>
                   </div>
 
-                  <button onClick={() => processPayment(appt)} className="w-full py-4 bg-primary text-white rounded-2xl font-bold font-heading text-lg shadow-xl hover:bg-secondary transition-all">Complete & Download Report</button>
+                  <button onClick={() => processPayment(appt)} className="w-full py-4 bg-primary text-white rounded-2xl font-bold font-heading text-lg shadow-xl hover:bg-secondary transition-all uppercase text-xs">Settle & Preview Report</button>
                </div>
              )
            })}
@@ -269,11 +276,18 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
                        </td>
                        <td className="px-6 py-4 font-bold text-slate-700 text-center font-mono text-[11px]">₹{bill.total.toFixed(2)}</td>
                        <td className="px-6 py-4 text-right">
-                          <button onClick={() => {
-                            const p = patients.find(pat => pat.id === bill.patientId);
-                            const a = appointments.find(ap => ap.id === bill.appointmentId);
-                            if (p && a) generatePDF(p, a, bill);
-                          }} className="text-secondary font-bold hover:underline text-[9px] uppercase tracking-widest">Download PDF</button>
+                          <div className="flex justify-end gap-3">
+                            <button onClick={() => {
+                              const p = patients.find(pat => pat.id === bill.patientId);
+                              const a = appointments.find(ap => ap.id === bill.appointmentId);
+                              if (p && a) generatePDF(p, a, bill, 'preview');
+                            }} className="text-secondary font-bold hover:underline text-[9px] uppercase tracking-widest">Preview</button>
+                            <button onClick={() => {
+                              const p = patients.find(pat => pat.id === bill.patientId);
+                              const a = appointments.find(ap => ap.id === bill.appointmentId);
+                              if (p && a) generatePDF(p, a, bill, 'download');
+                            }} className="text-primary font-bold hover:underline text-[9px] uppercase tracking-widest">Download</button>
+                          </div>
                        </td>
                     </tr>
                  ))}

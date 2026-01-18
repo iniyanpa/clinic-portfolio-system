@@ -85,6 +85,7 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
         initialSymptoms: checkInVitals.symptoms || 'None recorded'
       });
       setCheckingInApptId(null);
+      setCheckInVitals({ bp: '', temp: '', pulse: '', weight: '', spo2: '', sugar: '', symptoms: '' });
     }
   };
 
@@ -223,6 +224,8 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
                    <input className="bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="Temp (°F)" value={checkInVitals.temp} onChange={e => setCheckInVitals({...checkInVitals, temp: e.target.value})} />
                    <input className="bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="Pulse BPM" value={checkInVitals.pulse} onChange={e => setCheckInVitals({...checkInVitals, pulse: e.target.value})} />
                    <input className="bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="Weight KG" value={checkInVitals.weight} onChange={e => setCheckInVitals({...checkInVitals, weight: e.target.value})} />
+                   <input className="bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="SpO2 %" value={checkInVitals.spo2} onChange={e => setCheckInVitals({...checkInVitals, spo2: e.target.value})} />
+                   <input className="bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="Sugar Level" value={checkInVitals.sugar} onChange={e => setCheckInVitals({...checkInVitals, sugar: e.target.value})} />
                 </div>
                 <textarea rows={3} className="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none border border-slate-100 text-sm shadow-inner" placeholder="Patient detailed complaints..." value={checkInVitals.symptoms} onChange={e => setCheckInVitals({...checkInVitals, symptoms: e.target.value})} />
                 <div className="flex gap-4 pt-2">
