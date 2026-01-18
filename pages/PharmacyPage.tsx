@@ -16,9 +16,14 @@ const PharmacyPage: React.FC<PharmacyPageProps> = ({ prescriptions, patients, ap
       const appt = appointments.find(a => a.id === px.appointmentId);
       return {
         ...px,
-        time: appt?.time || '00:00'
+        time: appt?.time || '00:00',
+        visitDate: appt?.date || px.date
       };
-    }).sort((a, b) => b.time.localeCompare(a.time));
+    }).sort((a, b) => {
+      const dateTimeA = `${a.visitDate} ${a.time}`;
+      const dateTimeB = `${b.visitDate} ${b.time}`;
+      return dateTimeB.localeCompare(dateTimeA); // Sort Descending: Latest First
+    });
   }, [prescriptions, appointments]);
 
   return (
@@ -41,11 +46,12 @@ const PharmacyPage: React.FC<PharmacyPageProps> = ({ prescriptions, patients, ap
             return (
               <div key={px.id} className={`bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden transition-all ${px.status === 'Dispensed' ? 'opacity-60 grayscale' : 'hover:border-secondary shadow-md'}`}>
                 <div className="flex flex-col md:flex-row">
-                  <div className={`p-8 md:w-56 flex flex-col justify-center items-center text-center gap-1.5 ${px.status === 'Dispensed' ? 'bg-slate-100' : 'bg-primary text-white'}`}>
+                  <div className={`p-8 md:w-64 flex flex-col justify-center items-center text-center gap-1.5 ${px.status === 'Dispensed' ? 'bg-slate-100' : 'bg-primary text-white'}`}>
                     <span className="text-[9px] font-bold uppercase tracking-widest opacity-60">Rx Terminal</span>
                     <span className="font-mono text-xl font-bold">#{px.id.slice(-5)}</span>
-                    <div className="mt-2 text-[10px] font-black font-mono bg-white/10 px-3 py-1 rounded-lg">
-                      TIME: {px.time}
+                    <div className="mt-2 text-[10px] font-black font-mono bg-white/10 px-3 py-2 rounded-lg leading-tight">
+                      <div className="opacity-50 text-[8px] uppercase">Order Date/Time</div>
+                      {px.visitDate} | {px.time}
                     </div>
                     <span className={`px-4 py-1.5 rounded-lg text-[8px] font-bold uppercase tracking-widest mt-2 ${px.status === 'Dispensed' ? 'bg-green-100 text-green-700' : 'bg-white/20 text-white'}`}>
                       {px.status}
@@ -55,7 +61,7 @@ const PharmacyPage: React.FC<PharmacyPageProps> = ({ prescriptions, patients, ap
                     <div className="flex justify-between items-start">
                       <div>
                         <h4 className="font-heading text-2xl text-slate-800 uppercase tracking-tight">{p?.firstName} {p?.lastName}</h4>
-                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Reg ID: {p?.id} • Date: {px.date}</p>
+                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Reg ID: {p?.id} • Rx Date: {px.date}</p>
                       </div>
                       <div className="hidden sm:block text-slate-100">{ICONS.Staff}</div>
                     </div>
