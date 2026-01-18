@@ -27,32 +27,39 @@
     }
   </script>
   <style>
-    body { font-family: 'IBM Plex Sans', sans-serif; background-color: #f8fafc; color: #1e293b; font-size: 14px; }
+    /* Reduced global font size by 1 (13px base) */
+    body { font-family: 'IBM Plex Sans', sans-serif; background-color: #f8fafc; color: #1e293b; font-size: 13px; }
     h1, h2, h3, h4, .font-heading { font-family: 'Oswald', sans-serif; font-weight: 700; }
     .subheading { font-family: 'Cinzel', serif; }
     
-    /* Reduced Font Size for Inputs and Selects (1rem / 16px base) */
+    /* Input sizing refinement */
     input, select, textarea { 
       font-weight: 600 !important; 
-      font-size: 1rem !important; 
+      font-size: 0.9rem !important; 
       color: #0f172a !important;
-      padding: 0.75rem 1rem !important;
-      border-radius: 1rem !important;
+      padding: 0.6rem 0.8rem !important;
+      border-radius: 0.75rem !important;
     }
     
-    /* Enforce High Contrast on Primary/Secondary Buttons */
+    /* Enforce White Text on Blue Backgrounds and fix overflow */
     button {
       font-weight: 700 !important;
-      font-size: 0.875rem !important;
+      font-size: 0.75rem !important;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
       transition: all 0.2s ease;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
     
-    .btn-primary { background-color: #29378c !important; color: #ffffff !important; }
-    .btn-secondary { background-color: #29baed !important; color: #ffffff !important; }
+    .bg-primary button, .bg-primary a, .btn-primary { color: #ffffff !important; }
+    .bg-secondary button, .bg-secondary a, .btn-secondary { color: #ffffff !important; }
+    .text-white { color: #ffffff !important; }
 
     input::placeholder, textarea::placeholder {
       font-weight: 500 !important;
-      font-size: 0.875rem !important;
+      font-size: 0.75rem !important;
       color: #94a3b8 !important;
     }
     

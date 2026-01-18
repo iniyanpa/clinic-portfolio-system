@@ -21,6 +21,10 @@ export interface Tenant {
   expiryDate?: string;
   consultationFee?: number;
   platformFee?: number;
+  address?: string;
+  phone?: string;
+  email?: string;
+  logoUrl?: string;
 }
 
 export interface User {

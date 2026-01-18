@@ -23,7 +23,7 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
   useEffect(() => {
     if (tenantSettings) {
       setEditingItems([
-        { id: '1', description: 'Doctor Consultation Fee', amount: tenantSettings.consultationFee || 500 },
+        { id: '1', description: 'Consultation Fee', amount: tenantSettings.consultationFee || 500 },
         { id: '2', description: 'Platform & Clinic Maintenance', amount: tenantSettings.platformFee || 200 }
       ]);
     }
@@ -38,103 +38,144 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
     const record = records.find(r => r.appointmentId === appt.id);
     const prescription = prescriptions.find(p => p.appointmentId === appt.id);
     
-    // Header Style
+    // --- Header / Letterhead ---
     doc.setFillColor(41, 55, 140);
     doc.rect(0, 0, 210, 50, 'F');
+    
+    // Clinic Info on Left
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(28);
+    doc.setFontSize(24);
     doc.setFont('helvetica', 'bold');
-    doc.text(clinicName.toUpperCase(), 20, 28);
+    doc.text(clinicName.toUpperCase(), 20, 22);
+    
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    const clinicAddress = tenantSettings?.address || "Address not provided in settings";
+    const clinicContact = `Phone: ${tenantSettings?.phone || "N/A"} | Email: ${tenantSettings?.email || "N/A"}`;
+    doc.text(clinicAddress, 20, 30);
+    doc.text(clinicContact, 20, 35);
+    
     doc.setFontSize(10);
-    doc.text('COMPREHENSIVE MEDICAL REPORT & INVOICE', 20, 40);
+    doc.text('COMPREHENSIVE CLINICAL REPORT & INVOICE', 20, 43);
 
-    // Patient & Invoice Info
+    // Document Details on Top Right
+    doc.setFontSize(8);
+    doc.text(`DOC ID: ${bill.id}`, 145, 22);
+    doc.text(`DATE: ${new Date(bill.date).toLocaleDateString('en-IN')}`, 145, 27);
+
+    // --- Patient Module ---
+    let y = 60;
+    doc.setTextColor(41, 55, 140);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('PATIENT INFORMATION', 20, y);
+    doc.line(20, y + 2, 190, y + 2);
+    
+    y += 10;
     doc.setTextColor(0, 0, 0);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('PATIENT PROFILE', 20, 65);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text(`${patient.firstName} ${patient.lastName} (${patient.gender})`, 20, 72);
-    doc.text(`ID: ${patient.id}`, 20, 77);
-    doc.text(`Phone: ${patient.phone}`, 20, 82);
+    doc.text(`Name: ${patient.firstName} ${patient.lastName}`, 20, y);
+    doc.text(`Gender/Age: ${patient.gender} | ${patient.dateOfBirth}`, 80, y);
+    doc.text(`Patient ID: ${patient.id}`, 150, y);
+    
+    y += 6;
+    doc.text(`Contact: ${patient.phone}`, 20, y);
+    doc.text(`Blood Group: ${patient.bloodGroup || 'N/A'}`, 80, y);
 
-    doc.setFont('helvetica', 'bold');
-    doc.text('BILLING DETAILS', 140, 65);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Date: ${new Date(bill.date).toLocaleDateString('en-IN')}`, 140, 72);
-    doc.text(`Invoice: ${bill.id}`, 140, 77);
-
-    doc.setDrawColor(230, 230, 230);
-    doc.line(20, 88, 190, 88);
-
-    // Vitals Section
-    let y = 98;
+    // --- Vitals Module ---
+    y += 15;
+    doc.setTextColor(41, 55, 140);
     doc.setFont('helvetica', 'bold');
     doc.text('CLINICAL VITALS', 20, y);
+    doc.line(20, y + 2, 190, y + 2);
+
+    y += 10;
+    doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'normal');
-    y += 8;
     if (appt.vitals) {
-        doc.text(`BP: ${appt.vitals.bp} | Temp: ${appt.vitals.temp} | Pulse: ${appt.vitals.pulse} | Weight: ${appt.vitals.weight}`, 20, y);
+        doc.text(`BP: ${appt.vitals.bp || 'N/A'}`, 20, y);
+        doc.text(`Temp: ${appt.vitals.temp || 'N/A'}`, 60, y);
+        doc.text(`Pulse: ${appt.vitals.pulse || 'N/A'}`, 100, y);
+        doc.text(`Weight: ${appt.vitals.weight || 'N/A'} kg`, 140, y);
     } else {
-        doc.text('Vitals not recorded.', 20, y);
+        doc.text('No vital statistics recorded for this visit.', 20, y);
     }
-    y += 12;
 
-    // Consultation Summary
-    doc.setFont('helvetica', 'bold');
-    doc.text('CONSULTATION SUMMARY', 20, y);
-    doc.setFont('helvetica', 'normal');
-    y += 8;
-    doc.text(`Diagnosis: ${record?.diagnosis || 'N/A'}`, 20, y);
-    y += 6;
-    doc.text(`Doctor's Notes: ${record?.notes || 'No specific notes.'}`, 20, y, { maxWidth: 170 });
+    // --- Consultation Module ---
     y += 15;
+    doc.setTextColor(41, 55, 140);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DOCTOR\'S FINDINGS & DIAGNOSIS', 20, y);
+    doc.line(20, y + 2, 190, y + 2);
 
-    // Pharmacy / Medicines
+    y += 10;
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Diagnosis: ${record?.diagnosis || 'N/A'}`, 20, y);
+    
+    y += 6;
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Clinical Notes:`, 20, y);
+    y += 5;
+    doc.text(record?.notes || 'No specific clinical remarks provided.', 25, y, { maxWidth: 165 });
+    
+    y += (record?.notes ? (Math.ceil(record.notes.length / 80) * 5) + 5 : 10);
+
+    // --- Pharmacy Module ---
+    doc.setTextColor(41, 55, 140);
     doc.setFont('helvetica', 'bold');
     doc.text('PRESCRIPTION (Rx)', 20, y);
-    doc.setFont('helvetica', 'normal');
-    y += 8;
+    doc.line(20, y + 2, 190, y + 2);
+
+    y += 10;
+    doc.setTextColor(0, 0, 0);
     if (prescription && prescription.medicines.length > 0) {
-        prescription.medicines.forEach(med => {
-            doc.text(`- ${med.name}: ${med.dosage} (${med.duration}) - ${med.instructions}`, 20, y);
-            y += 6;
+        prescription.medicines.forEach((med, i) => {
+            doc.setFont('helvetica', 'bold');
+            doc.text(`${i + 1}. ${med.name}`, 20, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`- Dose: ${med.dosage} | Duration: ${med.duration}`, 20, y + 5);
+            doc.text(`- Instructions: ${med.instructions}`, 20, y + 10);
+            y += 16;
+            // Page break check
+            if (y > 260) { doc.addPage(); y = 20; }
         });
     } else {
-        doc.text('No medication prescribed.', 20, y);
-        y += 6;
+        doc.text('No medication prescribed for this session.', 20, y);
+        y += 10;
     }
-    y += 10;
 
-    // Billing Table
-    doc.setDrawColor(200, 200, 200);
-    doc.line(20, y, 190, y);
-    y += 8;
+    // --- Billing Module ---
+    y += 10;
+    if (y > 230) { doc.addPage(); y = 20; }
+    doc.setTextColor(41, 55, 140);
     doc.setFont('helvetica', 'bold');
-    doc.text('Service Description', 20, y);
-    doc.text('Amount (INR)', 150, y);
-    y += 4;
-    doc.line(20, y, 190, y);
-    doc.setFont('helvetica', 'normal');
-    y += 10;
+    doc.text('INVOICE & SETTLEMENT', 20, y);
+    doc.line(20, y + 2, 190, y + 2);
 
+    y += 10;
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(8);
     bill.items.forEach(item => {
-      doc.text(item.description, 20, y);
-      doc.text(`Rs. ${item.amount.toFixed(2)}`, 150, y);
-      y += 8;
+        doc.text(item.description, 20, y);
+        doc.text(`INR ${item.amount.toFixed(2)}`, 160, y, { align: 'right' });
+        y += 6;
     });
 
-    doc.line(20, y, 190, y);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text('TOTAL PAYABLE:', 20, y + 12);
-    doc.text(`Rs. ${bill.total.toFixed(2)}`, 150, y + 12);
-
-    doc.setFontSize(9);
-    doc.setTextColor(150, 150, 150);
-    doc.text('Thank you for choosing ' + clinicName, 105, 280, { align: 'center' });
+    doc.text('NET PAYABLE:', 20, y + 6);
+    doc.text(`INR ${bill.total.toFixed(2)}`, 160, y + 6, { align: 'right' });
     
-    doc.save(`Medical_Report_${bill.id}_${patient.firstName}.pdf`);
+    y += 20;
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(150, 150, 150);
+    doc.text('This is a computer-generated medical record and tax invoice.', 105, 285, { align: 'center' });
+    doc.text('Generated via HealFlow Cloud Systems.', 105, 290, { align: 'center' });
+    
+    doc.save(`ClinicalReport_${bill.id}_${patient.firstName}.pdf`);
   };
 
   const processPayment = (appt: Appointment) => {
@@ -153,83 +194,86 @@ const BillingPage: React.FC<BillingPageProps> = ({ patients, appointments, recor
   };
 
   return (
-    <div className="space-y-10 animate-in fade-in">
+    <div className="space-y-8 animate-in fade-in">
       <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-4xl font-heading font-bold text-primary">Billing & GST</h2>
-          <p className="subheading text-secondary font-bold text-[10px] tracking-widest uppercase">Visit Settlement</p>
+          <h2 className="text-3xl font-heading font-bold text-primary">Billing & GST</h2>
+          <p className="subheading text-secondary font-bold text-[9px] tracking-widest uppercase">Visit Settlement Terminal</p>
         </div>
-        <div className="bg-slate-100 p-2 rounded-[1rem] flex gap-2 font-bold shadow-inner">
-          <button onClick={() => setActiveTab('pending')} className={`px-6 py-2 rounded-lg text-xs uppercase transition-all ${activeTab === 'pending' ? 'bg-primary text-white' : 'text-slate-400'}`}>Pending ({pendingInvoices.length})</button>
-          <button onClick={() => setActiveTab('history')} className={`px-6 py-2 rounded-lg text-xs uppercase transition-all ${activeTab === 'history' ? 'bg-primary text-white' : 'text-slate-400'}`}>History</button>
+        <div className="bg-slate-100 p-1.5 rounded-xl flex gap-1 font-bold shadow-inner">
+          <button onClick={() => setActiveTab('pending')} className={`px-5 py-2 rounded-lg text-[9px] uppercase transition-all ${activeTab === 'pending' ? 'bg-primary text-white shadow-md' : 'text-slate-400'}`}>Pending ({pendingInvoices.length})</button>
+          <button onClick={() => setActiveTab('history')} className={`px-5 py-2 rounded-lg text-[9px] uppercase transition-all ${activeTab === 'history' ? 'bg-primary text-white shadow-md' : 'text-slate-400'}`}>Paid Records</button>
         </div>
       </div>
 
       {activeTab === 'pending' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
            {pendingInvoices.map(appt => {
              const p = patients.find(pat => pat.id === appt.patientId);
              return (
-               <div key={appt.id} className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm space-y-6">
+               <div key={appt.id} className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm space-y-6">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h4 className="text-2xl font-bold text-slate-800">{p?.firstName} {p?.lastName}</h4>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Case ID: {appt.id}</p>
+                      <h4 className="text-xl font-bold text-slate-800">{p?.firstName} {p?.lastName}</h4>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Case: {appt.id}</p>
                     </div>
-                    <div className="bg-green-50 text-green-600 px-4 py-1 rounded-full text-[10px] font-bold">READY</div>
+                    <div className="bg-green-50 text-green-600 px-3 py-1 rounded-full text-[9px] font-bold uppercase">Ready</div>
                   </div>
 
-                  <div className="bg-slate-50 p-6 rounded-2xl space-y-3">
+                  <div className="bg-slate-50 p-6 rounded-2xl space-y-2">
                     {editingItems.map(item => (
-                      <div key={item.id} className="flex justify-between text-sm font-bold">
-                        <span className="text-slate-500">{item.description}</span>
+                      <div key={item.id} className="flex justify-between text-[11px] font-bold">
+                        <span className="text-slate-400 font-medium">{item.description}</span>
                         <span className="text-slate-800 font-mono">₹{item.amount.toFixed(2)}</span>
                       </div>
                     ))}
-                    <div className="pt-4 border-t border-slate-200 flex justify-between items-center">
-                      <span className="text-primary font-heading text-xl">Total</span>
-                      <span className="text-primary font-black text-3xl font-mono">₹{editingItems.reduce((s,i) => s + i.amount, 0).toFixed(2)}</span>
+                    <div className="pt-4 mt-2 border-t border-slate-200 flex justify-between items-center">
+                      <span className="text-primary font-heading text-lg">Invoice Total</span>
+                      <span className="text-primary font-black text-2xl font-mono">₹{editingItems.reduce((s,i) => s + i.amount, 0).toFixed(2)}</span>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
-                    {['UPI', 'Cash', 'Card'].map(m => (
-                      <button key={m} onClick={() => setSelectedPayment(m as any)} className={`py-4 rounded-xl text-[10px] font-bold uppercase transition-all ${selectedPayment === m ? 'bg-secondary text-white' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}>{m}</button>
-                    ))}
+                  <div className="space-y-3">
+                    <label className="text-[9px] font-bold text-slate-400 uppercase ml-2 block">Settlement Method</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {['UPI', 'Cash', 'Card'].map(m => (
+                        <button key={m} onClick={() => setSelectedPayment(m as any)} className={`py-3 rounded-xl text-[9px] font-bold uppercase transition-all ${selectedPayment === m ? 'bg-secondary text-white' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}>{m}</button>
+                      ))}
+                    </div>
                   </div>
 
-                  <button onClick={() => processPayment(appt)} className="w-full py-5 bg-primary text-white rounded-2xl font-bold font-heading text-xl shadow-xl hover:bg-secondary transition-all">Settle & Download Report</button>
+                  <button onClick={() => processPayment(appt)} className="w-full py-4 bg-primary text-white rounded-2xl font-bold font-heading text-lg shadow-xl hover:bg-secondary transition-all">Complete & Download Report</button>
                </div>
              )
            })}
-           {pendingInvoices.length === 0 && <p className="lg:col-span-2 text-center py-20 text-slate-300 font-bold italic">No pending bills to settle.</p>}
+           {pendingInvoices.length === 0 && <p className="lg:col-span-2 text-center py-20 text-slate-300 font-bold italic">No pending bills in queue.</p>}
         </div>
       ) : (
-        <div className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm">
+        <div className="bg-white rounded-[1.5rem] border border-slate-200 overflow-hidden shadow-sm">
            <table className="w-full text-left">
-              <thead className="bg-slate-50">
+              <thead className="bg-slate-50 border-b border-slate-100">
                  <tr>
-                    <th className="px-8 py-5 text-xs font-bold text-slate-400 uppercase tracking-widest">Inv #</th>
-                    <th className="px-8 py-5 text-xs font-bold text-slate-400 uppercase tracking-widest">Patient</th>
-                    <th className="px-8 py-5 text-xs font-bold text-slate-400 uppercase tracking-widest text-center">Amount</th>
-                    <th className="px-8 py-5 text-right text-xs font-bold text-slate-400 uppercase tracking-widest">Actions</th>
+                    <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest">Inv #</th>
+                    <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest">Patient Name</th>
+                    <th className="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Amount</th>
+                    <th className="px-6 py-4 text-right text-[9px] font-bold text-slate-400 uppercase tracking-widest">Actions</th>
                  </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                 {bills.map(bill => (
+                 {bills.sort((a,b) => b.id.localeCompare(a.id)).map(bill => (
                     <tr key={bill.id} className="hover:bg-slate-50 transition-colors">
-                       <td className="px-8 py-5 font-mono font-bold text-primary">#{bill.id.split('-')[1]}</td>
-                       <td className="px-8 py-5">
-                          <p className="font-bold text-slate-800">{patients.find(p => p.id === bill.patientId)?.firstName} {patients.find(p => p.id === bill.patientId)?.lastName}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">{bill.date} • {bill.paymentMethod}</p>
+                       <td className="px-6 py-4 font-mono font-bold text-primary text-[11px]">#{bill.id.split('-')[1]}</td>
+                       <td className="px-6 py-4">
+                          <p className="font-bold text-slate-800 text-sm">{patients.find(p => p.id === bill.patientId)?.firstName} {patients.find(p => p.id === bill.patientId)?.lastName}</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">{bill.date} • {bill.paymentMethod}</p>
                        </td>
-                       <td className="px-8 py-5 font-bold text-slate-700 text-center font-mono">₹{bill.total.toFixed(2)}</td>
-                       <td className="px-8 py-5 text-right">
+                       <td className="px-6 py-4 font-bold text-slate-700 text-center font-mono text-[11px]">₹{bill.total.toFixed(2)}</td>
+                       <td className="px-6 py-4 text-right">
                           <button onClick={() => {
                             const p = patients.find(pat => pat.id === bill.patientId);
                             const a = appointments.find(ap => ap.id === bill.appointmentId);
                             if (p && a) generatePDF(p, a, bill);
-                          }} className="text-secondary font-bold hover:underline text-xs uppercase tracking-widest">Download Copy</button>
+                          }} className="text-secondary font-bold hover:underline text-[9px] uppercase tracking-widest">Download PDF</button>
                        </td>
                     </tr>
                  ))}

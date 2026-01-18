@@ -173,13 +173,13 @@ const AuthPage: React.FC<{ mode: 'signin' | 'signup', plan?: SubscriptionPlan, o
           <form onSubmit={handleSubmit} className="space-y-6">
             {mode === 'signup' && (
               <>
-                <input required className="w-full p-5 bg-white border border-slate-200 rounded-3xl outline-none" placeholder="Clinic Name" value={formData.clinicName} onChange={e => setFormData({...formData, clinicName: e.target.value})} />
-                <input required className="w-full p-5 bg-white border border-slate-200 rounded-3xl outline-none" placeholder="Full Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                <input required className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none" placeholder="Clinic Name" value={formData.clinicName} onChange={e => setFormData({...formData, clinicName: e.target.value})} />
+                <input required className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none" placeholder="Full Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
               </>
             )}
-            <input required type="email" className="w-full p-5 bg-white border border-slate-200 rounded-3xl outline-none" placeholder="Email Address" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
-            <input required type="password" className="w-full p-5 bg-white border border-slate-200 rounded-3xl outline-none" placeholder="Password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
-            <button type="submit" disabled={loading} className="w-full py-6 bg-primary text-white rounded-[2rem] font-bold text-xl shadow-2xl transition-all">
+            <input required type="email" className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none" placeholder="Email Address" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+            <input required type="password" className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none" placeholder="Password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+            <button type="submit" disabled={loading} className="w-full py-5 bg-primary text-white rounded-2xl font-bold text-lg shadow-2xl transition-all">
               {loading ? 'Processing...' : (mode === 'signup' ? 'Activate System' : 'Sign In')}
             </button>
           </form>
@@ -189,7 +189,7 @@ const AuthPage: React.FC<{ mode: 'signin' | 'signup', plan?: SubscriptionPlan, o
             </button>
           </div>
         </div>
-        <button onClick={onBack} className="w-full text-slate-400 font-bold uppercase tracking-widest text-xs hover:text-primary transition-all">← Back to Homepage</button>
+        <button onClick={onBack} className="w-full text-slate-400 font-bold uppercase tracking-widest text-[10px] hover:text-primary transition-all">← Back to Homepage</button>
       </div>
     </div>
   );
@@ -221,7 +221,11 @@ const App: React.FC = () => {
       const tid = currentUser.tenantId;
       const sanitize = (docs: any[]) => docs.map(d => ({ ...d.data(), id: d.id }));
       const unsubs = [
-        onSnapshot(doc(clinicalCollections.tenants, tid), (s) => setTenantSettings(s.data() as Tenant)),
+        onSnapshot(doc(clinicalCollections.tenants, tid), (s) => {
+          const data = s.data() as Tenant;
+          setTenantSettings(data);
+          if (data?.name) setClinicName(data.name);
+        }),
         onSnapshot(query(clinicalCollections.patients, where("tenantId", "==", tid)), (s: any) => setPatients(sanitize(s.docs) as Patient[])),
         onSnapshot(query(clinicalCollections.appointments, where("tenantId", "==", tid)), (s: any) => setAppointments(sanitize(s.docs) as Appointment[])),
         onSnapshot(query(clinicalCollections.bills, where("tenantId", "==", tid)), (s: any) => setBills(sanitize(s.docs) as Bill[])),
@@ -268,13 +272,29 @@ const App: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-slate-50 font-body text-slate-800">
-      <Sidebar user={currentUser!} tenantName={clinicName} activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+      <Sidebar 
+        user={currentUser!} 
+        tenantName={clinicName} 
+        tenantLogo={tenantSettings?.logoUrl}
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        onLogout={handleLogout} 
+        isOpen={isSidebarOpen} 
+        setIsOpen={setIsSidebarOpen} 
+      />
       <main className="flex-1 lg:ml-64 flex flex-col min-w-0">
         <header className="bg-white border-b border-slate-200 sticky top-0 z-30 px-6 py-4 flex items-center justify-between shadow-sm lg:hidden">
-          <button onClick={() => setIsSidebarOpen(true)} className="p-2 btn-primary rounded-lg">{ICONS.Menu}</button>
-          <h1 className="text-xl font-heading font-black text-primary">HF</h1>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
+            <button onClick={(e) => { e.stopPropagation(); setIsSidebarOpen(true); }} className="p-2 btn-primary rounded-lg mr-2">{ICONS.Menu}</button>
+            {tenantSettings?.logoUrl ? (
+              <img src={tenantSettings.logoUrl} alt="Logo" className="w-8 h-8 rounded-lg object-cover" />
+            ) : (
+              <div className="text-primary">{ICONS.Home}</div>
+            )}
+            <h1 className="text-lg font-heading font-black text-primary truncate">{clinicName}</h1>
+          </div>
         </header>
-        <div className="p-6 md:p-10 flex-1 max-w-7xl mx-auto w-full">
+        <div className="p-6 md:p-8 flex-1 max-w-7xl mx-auto w-full">
           {activeTab === 'dashboard' && <Dashboard patients={patients} appointments={appointments} bills={bills} logs={[]} setActiveTab={setActiveTab} />}
           {activeTab === 'patients' && <Patients patients={patients} tenantId={currentUser!.tenantId} clinicName={clinicName} addPatient={addPatient} updatePatient={updatePatient} />}
           {activeTab === 'appointments' && <AppointmentsPage patients={patients} staff={staff} appointments={appointments} addAppointment={addAppointment} updateAppointmentStatus={updateAppointmentStatus} />}
