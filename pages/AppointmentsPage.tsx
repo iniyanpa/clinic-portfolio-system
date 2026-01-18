@@ -201,6 +201,33 @@ const AppointmentsPage: React.FC<AppointmentsPageProps> = ({ patients, staff, ap
                 <label className="text-[8px] font-bold text-slate-400 uppercase ml-2">Reason</label>
                 <input required className="w-full bg-slate-50 p-2.5 rounded-xl border border-slate-100 outline-none font-bold text-xs shadow-inner" placeholder="Complaint..." value={newAppt.reason} onChange={e => setNewAppt({...newAppt, reason: e.target.value})} />
               </div>
+              
+              {/* RESTORED AND STYLED FILE UPLOAD */}
+              <div className="space-y-1">
+                <label className="text-[8px] font-bold text-slate-400 uppercase ml-2">Attach Lab Record (Optional)</label>
+                <div className="flex flex-col gap-2">
+                  <input 
+                    type="file" 
+                    id="lab-record-upload"
+                    className="hidden"
+                    onChange={handleFileChange} 
+                  />
+                  <label 
+                    htmlFor="lab-record-upload"
+                    className="w-full bg-slate-50 p-3 rounded-xl border border-dashed border-slate-200 outline-none font-bold text-[10px] shadow-inner text-slate-400 flex items-center justify-center gap-2 cursor-pointer hover:bg-slate-100 transition-colors"
+                  >
+                    {ICONS.Plus} {newAppt.labRecordName ? 'Change Lab Record' : 'Upload Lab Record'}
+                  </label>
+                  {newAppt.labRecordName && (
+                    <p className="text-[9px] text-primary font-bold flex items-center gap-1 ml-2">
+                      {/* Fix: use ICONS.Records instead of ICONS.FileText as per constants.tsx definition */}
+                      <span className="opacity-60">{ICONS.Records}</span>
+                      <span className="truncate max-w-[200px]">{newAppt.labRecordName}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+
               <div className="flex flex-col sm:flex-row gap-3 pt-4 sticky bottom-0 bg-white">
                 <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-3 text-slate-400 font-bold uppercase tracking-widest text-[9px]">Discard</button>
                 <button type="submit" className="flex-1 py-3 bg-primary text-white rounded-xl font-bold shadow-xl hover:bg-secondary transition-all uppercase text-[9px] tracking-widest">Commit</button>
