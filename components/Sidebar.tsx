@@ -30,39 +30,59 @@ const Sidebar: React.FC<SidebarProps> = ({ user, tenantName, tenantLogo, activeT
   return (
     <>
       {isOpen && <div className="fixed inset-0 bg-primary/40 backdrop-blur-sm z-40 lg:hidden" onClick={() => setIsOpen(false)}/>}
-      <div className={`fixed left-0 top-0 h-screen bg-primary text-white flex flex-col z-50 transition-transform duration-300 w-64 ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-        <div 
-          className="p-8 border-b border-white/10 cursor-pointer hover:bg-white/5 transition-all"
-          onClick={() => setActiveTab('dashboard')}
-        >
-          <div className="flex items-center gap-3">
-            {tenantLogo ? (
-              <img src={tenantLogo} alt="Logo" className="w-10 h-10 rounded-lg object-cover bg-white p-1 shadow-inner" />
-            ) : (
-              <div className="bg-white/10 p-2 rounded-lg text-secondary shadow-inner">{ICONS.Home}</div>
-            )}
-            <div className="overflow-hidden">
-              <h1 className="text-lg font-heading font-bold tracking-tight text-white uppercase truncate leading-tight">{tenantName}</h1>
-              <span className="text-[8px] font-bold text-white/50 uppercase tracking-[0.2em] mt-0.5 block">{user.role} TERMINAL</span>
+      <div className={`fixed left-0 top-0 h-screen h-[100dvh] bg-primary text-white flex flex-col z-50 transition-transform duration-300 w-64 shadow-2xl ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        
+        {/* Main Scrollable Content Wrapper */}
+        <div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden custom-scrollbar">
+          
+          {/* Header/Logo Section */}
+          <div 
+            className="p-6 sm:p-8 border-b border-white/10 cursor-pointer hover:bg-white/5 transition-all sticky top-0 bg-primary z-10"
+            onClick={() => { setActiveTab('dashboard'); setIsOpen(false); }}
+          >
+            <div className="flex items-center gap-3">
+              {tenantLogo ? (
+                <img src={tenantLogo} alt="Logo" className="w-10 h-10 rounded-lg object-cover bg-white p-1 shadow-inner" />
+              ) : (
+                <div className="bg-white/10 p-2 rounded-lg text-secondary shadow-inner">{ICONS.Home}</div>
+              )}
+              <div className="overflow-hidden">
+                <h1 className="text-sm sm:text-lg font-heading font-bold tracking-tight text-white uppercase truncate leading-tight">{tenantName}</h1>
+                <span className="text-[8px] font-bold text-white/50 uppercase tracking-[0.2em] mt-0.5 block">{user.role} TERMINAL</span>
+              </div>
             </div>
           </div>
-        </div>
-        <nav className="flex-1 px-4 mt-6 space-y-1.5 overflow-y-auto custom-scrollbar">
-          {filteredMenu.map((item) => (
+
+          {/* Navigation Links */}
+          <nav className="flex-1 px-4 py-6 space-y-1.5">
+            {filteredMenu.map((item) => (
+              <button 
+                key={item.id} 
+                onClick={() => { setActiveTab(item.id); setIsOpen(false); }} 
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left group ${activeTab === item.id ? 'bg-secondary text-white shadow-lg' : 'hover:bg-white/5 text-white/60 hover:text-white'}`}
+              >
+                <div className={`flex-shrink-0 transition-transform duration-300 ${activeTab === item.id ? 'scale-110' : 'opacity-80 group-hover:scale-110 group-hover:opacity-100'}`}>{item.icon}</div>
+                <span className="font-bold text-[10px] tracking-widest uppercase truncate">{item.label}</span>
+              </button>
+            ))}
+          </nav>
+
+          {/* Logout Section - Moved inside scrollable area for small screens but appears fixed if space permits */}
+          <div className="p-6 border-t border-white/10 mt-auto bg-primary/50 backdrop-blur-md pb-12 sm:pb-8">
             <button 
-              key={item.id} 
-              onClick={() => { setActiveTab(item.id); setIsOpen(false); }} 
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left ${activeTab === item.id ? 'bg-secondary text-white shadow-lg' : 'hover:bg-white/5 text-white/60 hover:text-white'}`}
+              onClick={onLogout} 
+              className="w-full flex items-center gap-3 px-4 py-4 sm:py-3 rounded-xl text-white/40 hover:bg-red-500 hover:text-white transition-all font-bold text-[10px] tracking-widest uppercase active:scale-95"
             >
-              <div className="flex-shrink-0 opacity-80">{item.icon}</div>
-              <span className="font-bold text-[10px] tracking-widest uppercase truncate">{item.label}</span>
+              <div className="opacity-80">{ICONS.Logout}</div>
+              <span>Logout Terminal</span>
             </button>
-          ))}
-        </nav>
-        <div className="p-6 border-t border-white/10">
-          <button onClick={onLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/40 hover:bg-red-500 hover:text-white transition-all font-bold text-[10px] tracking-widest uppercase">
-            {ICONS.Logout} <span>Logout</span>
-          </button>
+            
+            {/* Mobile-only close instruction or subtle branding */}
+            <div className="mt-4 text-center lg:hidden">
+               <p className="text-[7px] font-black text-white/20 uppercase tracking-[0.3em]">Clinical OS v2.5</p>
+            </div>
+          </div>
+          
         </div>
       </div>
     </>
